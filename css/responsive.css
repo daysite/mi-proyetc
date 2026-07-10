@@ -1,0 +1,206 @@
+/* ===== RESPONSIVE COMPLETO ===== */
+
+/* ===== SMARTPHONES (≤ 480px) ===== */
+@media (max-width: 480px) {
+    .tab-content {
+        padding: 12px;
+    }
+    
+    .panel-header h2 {
+        font-size: 20px;
+    }
+    
+    .panel-header p {
+        font-size: 13px;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 10px 18px;
+        font-size: 13px;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    input, textarea, select {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    
+    /* Stats grid */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+    }
+    
+    .stat-number {
+        font-size: 22px;
+    }
+    
+    /* Platform buttons */
+    .platform-buttons {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .platform-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        flex: 1;
+        min-width: 60px;
+    }
+    
+    /* Quick commands */
+    .quick-commands {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .quick-commands button {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    /* News grid */
+    .news-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    /* Music results */
+    .music-result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+
+/* ===== TABLETS (481px - 768px) ===== */
+@media (min-width: 481px) and (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    
+    .news-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .platform-buttons {
+        gap: 8px;
+    }
+    
+    .platform-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .url-input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .url-input-group input {
+        width: 100%;
+    }
+}
+
+/* ===== DESKTOP (≥ 769px) ===== */
+@media (min-width: 769px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .news-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+    
+    .url-input-group {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .url-input-group input {
+        flex: 1;
+    }
+    
+    .url-input-group button {
+        flex-shrink: 0;
+    }
+    
+    .chat-input-group {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .chat-input-group input {
+        flex: 1;
+    }
+}
+
+/* ===== LARGE SCREENS (≥ 1200px) ===== */
+@media (min-width: 1200px) {
+    .tab-content {
+        max-width: 1400px;
+        padding: 32px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .news-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ===== UTILIDADES RESPONSIVE ===== */
+.hide-on-mobile {
+    display: inline;
+}
+
+.show-on-mobile {
+    display: none;
+}
+
+@media (max-width: 480px) {
+    .hide-on-mobile {
+        display: none;
+    }
+    
+    .show-on-mobile {
+        display: inline;
+    }
+}
+
+/* ===== AJUSTES DE TIPOGRAFÍA ===== */
+@media (max-width: 480px) {
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 17px; }
+    h4 { font-size: 15px; }
+    p, li, a { font-size: 14px; }
+}
+
+/* ===== ESPACIADOS ===== */
+@media (max-width: 480px) {
+    .section-padding {
+        padding: 12px 0;
+    }
+    
+    .gap-8 { gap: 6px; }
+    .gap-12 { gap: 8px; }
+    .gap-16 { gap: 10px; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .section-padding {
+        padding: 16px 0;
+    }
+}
