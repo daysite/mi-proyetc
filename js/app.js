@@ -3,82 +3,72 @@ const App = {
     // Configuración
     config: {
         theme: localStorage.getItem('theme') || 'light',
-        apiKeys: {
-            // Aquí irían tus API keys
-            // news: 'TU_API_KEY_DE_NEWS',
-            // weather: 'TU_API_KEY_DE_WEATHER',
-            // currency: 'TU_API_KEY_DE_CURRENCY'
-        }
     },
 
     // Inicializar
     init() {
         this.loadTheme();
         this.setupEventListeners();
-        this.updateDateTime();
-        setInterval(() => this.updateDateTime(), 60000);
         console.log('🚀 Utility Hub iniciado correctamente');
+        console.log('📱 Modo actual:', this.config.theme);
     },
 
     // Cargar tema
     loadTheme() {
         const theme = this.config.theme;
         document.documentElement.setAttribute('data-theme', theme);
+        
         const icon = document.querySelector('#themeToggle i');
         if (icon) {
             icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
+        
+        // Guardar en localStorage
+        localStorage.setItem('theme', theme);
+        console.log('🎨 Tema cargado:', theme);
     },
 
     // Cambiar tema
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        this.loadTheme();
         
-        // Animación
-        document.body.style.transition = 'background 0.3s ease';
+        // Actualizar icono
+        const icon = document.querySelector('#themeToggle i');
+        if (icon) {
+            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        
+        this.config.theme = newTheme;
+        console.log('🎨 Tema cambiado a:', newTheme);
+        
+        // Animación suave
+        document.body.style.transition = 'background 0.3s ease, color 0.3s ease';
         setTimeout(() => {
             document.body.style.transition = '';
         }, 300);
     },
 
-    // Actualizar fecha y hora
-    updateDateTime() {
-        const now = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        const dateString = now.toLocaleDateString('es-ES', options);
-        // Puedes mostrar esto donde quieras
-    },
-
     // Event listeners globales
     setupEventListeners() {
         // Toggle tema
-        document.getElementById('themeToggle')?.addEventListener('click', () => {
-            this.toggleTheme();
-        });
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
 
         // Notificaciones
-        document.getElementById('notifications')?.addEventListener('click', () => {
-            this.showNotification('🔔', '¡Tienes 3 notificaciones nuevas!');
-        });
-
-        // Cerrar notificaciones automáticamente
-        document.addEventListener('click', (e) => {
-            const toast = document.querySelector('.toast-notification');
-            if (toast && !toast.contains(e.target)) {
-                toast.remove();
-            }
-        });
+        const notifBtn = document.getElementById('notifications');
+        if (notifBtn) {
+            notifBtn.addEventListener('click', () => {
+                this.showNotification('🔔', '¡Tienes 3 notificaciones nuevas!');
+            });
+        }
     },
 
     // Mostrar notificación
@@ -89,23 +79,26 @@ const App = {
         const toast = document.createElement('div');
         toast.className = 'toast-notification';
         toast.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px; 
+            <div style="display:flex; align-items:center; gap:14px; 
                  background: var(--bg-card); padding:16px 24px; 
-                 border-radius:12px; box-shadow: 0 8px 30px var(--shadow-color);
+                 border-radius: var(--radius); 
+                 box-shadow: 0 8px 40px var(--shadow-color);
                  border-left: 4px solid var(--primary-color);
-                 position: fixed; bottom:24px; right:24px; z-index:9999;
-                 animation: slideIn 0.3s ease; max-width: 400px;">
-                <span style="font-size:24px;">${icon}</span>
-                <span style="color: var(--text-primary);">${message}</span>
+                 backdrop-filter: blur(20px);
+                 -webkit-backdrop-filter: blur(20px);
+                 min-width: 280px;
+                 border: 1px solid var(--border-color);">
+                <span style="font-size:28px;">${icon}</span>
+                <span style="color: var(--text-primary); font-weight: 500; flex:1;">${message}</span>
                 <button onclick="this.parentElement.parentElement.remove()" 
                         style="background:transparent; border:none; color:var(--text-light); 
-                               cursor:pointer; font-size:18px;">×</button>
+                               cursor:pointer; font-size:22px; padding:0 4px;">×</button>
             </div>
         `;
         document.body.appendChild(toast);
 
         setTimeout(() => {
-            toast.remove();
+            if (toast.parentElement) toast.remove();
         }, 5000);
     },
 
@@ -128,12 +121,5 @@ document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
 
-// Estilos para toast (se agregan dinámicamente)
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
+// Exponer App globalmente
+window.App = App;
