@@ -33,6 +33,7 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .tab-btn i {
@@ -53,6 +54,39 @@
 
 .tab-btn.active i {
     color: white;
+}
+
+/* ===== BADGES EN PESTAÑAS ===== */
+.tab-badge {
+    font-size: 8px;
+    background: #FF6B6B;
+    color: white;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+    line-height: 1.4;
+}
+
+.tab-badge.hot {
+    background: #FF6B6B;
+    font-size: 11px;
+    padding: 0 5px;
+    animation: pulse 1.5s infinite;
+}
+
+/* ===== ANIMACIÓN DEL BADGE ===== */
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
 }
 
 /* ===== RESPONSIVE TABS ===== */
@@ -87,6 +121,11 @@
     .tab-btn i {
         font-size: 18px;
     }
+    
+    /* Ocultar badges en móvil */
+    .tab-badge {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
@@ -102,5 +141,10 @@
     
     .tab-btn i {
         font-size: 16px;
+    }
+    
+    /* Ocultar badges en móvil */
+    .tab-badge {
+        display: none;
     }
 }
