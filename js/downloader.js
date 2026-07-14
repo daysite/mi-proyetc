@@ -1,4 +1,4 @@
-// ===== DESCARGADOR DE VIDEOS Y AUDIO CON API DE DELIRIUS =====
+// ===== DESCARGADOR DE VIDEOS Y AUDIO CON SELECTOR DE FORMATO =====
 document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.getElementById('downloadBtn');
     const videoUrlInput = document.getElementById('videoUrl');
@@ -7,6 +7,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const historyList = document.getElementById('historyList');
 
     let selectedPlatform = 'youtube';
+    let selectedFormat = 'mp4'; // Por defecto: video
+
+    // ===== SELECTOR DE FORMATO =====
+    const formatVideoBtn = document.getElementById('formatVideo');
+    const formatAudioBtn = document.getElementById('formatAudio');
+
+    if (formatVideoBtn && formatAudioBtn) {
+        formatVideoBtn.addEventListener('click', function() {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedFormat = 'mp4';
+            // Cambiar estilo visual
+            this.style.borderColor = 'var(--primary-color)';
+            this.style.background = 'var(--primary-color)';
+            this.style.color = 'white';
+            formatAudioBtn.style.borderColor = 'var(--border-color)';
+            formatAudioBtn.style.background = 'var(--bg-card)';
+            formatAudioBtn.style.color = 'var(--text-primary)';
+            App.showNotification('📹', 'Formato seleccionado: MP4 Video');
+        });
+
+        formatAudioBtn.addEventListener('click', function() {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedFormat = 'mp3';
+            // Cambiar estilo visual
+            this.style.borderColor = 'var(--primary-color)';
+            this.style.background = 'var(--primary-color)';
+            this.style.color = 'white';
+            formatVideoBtn.style.borderColor = 'var(--border-color)';
+            formatVideoBtn.style.background = 'var(--bg-card)';
+            formatVideoBtn.style.color = 'var(--text-primary)';
+            App.showNotification('🎵', 'Formato seleccionado: MP3 Audio');
+        });
+    }
 
     // Seleccionar plataforma
     platformBtns.forEach(btn => {
@@ -65,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ">
                 <i class="fas fa-spinner" style="font-size: 40px; color: var(--primary-color);"></i>
                 <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Procesando tu solicitud...</p>
-                <p style="color: var(--text-light); font-size: 14px;">Esto puede tomar unos segundos</p>
+                <p style="color: var(--text-light); font-size: 14px;">Formato seleccionado: ${selectedFormat.toUpperCase()}</p>
                 <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
                      background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
                     <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
@@ -102,54 +137,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== API DE DELIRIUS - DESCARGA DE VIDEO Y AUDIO =====
     async function downloadFromDelirius(url) {
         try {
-            // Primero intentamos obtener video (mp4)
-            const videoUrl = `https://api.delirius.store/download/ytmp4?url=${encodeURIComponent(url)}`;
-            const videoResponse = await fetch(videoUrl);
-            const videoData = await videoResponse.json();
+            // Usar el formato seleccionado
+            const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
+            const apiUrl = `https://api.delirius.store/download/${endpoint}?url=${encodeURIComponent(url)}`;
+            
+            const response = await fetch(apiUrl);
+            const data = await response.json();
 
-            // Si falla el video, intentamos audio (mp3)
-            if (!videoData.status || !videoData.data) {
-                const audioUrl = `https://api.delirius.store/download/ytmp3?url=${encodeURIComponent(url)}`;
-                const audioResponse = await fetch(audioUrl);
-                const audioData = await audioResponse.json();
-
-                if (!audioData.status || !audioData.data) {
+            if (!data.status || !data.data) {
+                // Si falla un formato, intentar con el otro
+                const fallbackEndpoint = selectedFormat === 'mp4' ? 'ytmp3' : 'ytmp4';
+                const fallbackUrl = `https://api.delirius.store/download/${fallbackEndpoint}?url=${encodeURIComponent(url)}`;
+                const fallbackResponse = await fetch(fallbackUrl);
+                const fallbackData = await fallbackResponse.json();
+                
+                if (!fallbackData.status || !fallbackData.data) {
                     return {
                         success: false,
-                        message: 'No se pudo obtener el video o audio'
+                        message: 'No se pudo obtener el contenido'
                     };
                 }
-
-                const audioResult = audioData.data;
+                
+                const result = fallbackData.data;
                 return {
                     success: true,
-                    title: audioResult.title || 'Audio de YouTube',
-                    author: audioResult.author || 'Desconocido',
-                    thumbnail: audioResult.image || 'https://picsum.photos/seed/audio/400/300',
-                    downloadUrl: audioResult.download,
+                    title: result.title || 'Contenido de YouTube',
+                    author: result.author || 'Desconocido',
+                    thumbnail: result.image || 'https://picsum.photos/seed/fallback/400/300',
+                    downloadUrl: result.download,
                     platform: 'youtube',
-                    format: 'mp3',
-                    size: 'Audio MP3',
-                    views: audioResult.views || '0',
-                    likes: audioResult.likes || '0',
-                    type: 'audio'
+                    format: fallbackEndpoint === 'ytmp4' ? 'mp4' : 'mp3',
+                    size: fallbackEndpoint === 'ytmp4' ? 'Video MP4' : 'Audio MP3',
+                    views: result.views || '0',
+                    likes: result.likes || '0',
+                    type: fallbackEndpoint === 'ytmp4' ? 'video' : 'audio'
                 };
             }
 
-            // Si el video funciona
-            const videoResult = videoData.data;
+            const result = data.data;
             return {
                 success: true,
-                title: videoResult.title || 'Video de YouTube',
-                author: videoResult.author || 'Desconocido',
-                thumbnail: videoResult.image || 'https://picsum.photos/seed/video/400/300',
-                downloadUrl: videoResult.download,
+                title: result.title || 'Contenido de YouTube',
+                author: result.author || 'Desconocido',
+                thumbnail: result.image || 'https://picsum.photos/seed/success/400/300',
+                downloadUrl: result.download,
                 platform: 'youtube',
-                format: 'mp4',
-                size: 'Video MP4',
-                views: videoResult.views || '0',
-                likes: videoResult.likes || '0',
-                type: 'video'
+                format: selectedFormat,
+                size: selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3',
+                views: result.views || '0',
+                likes: result.likes || '0',
+                type: selectedFormat === 'mp4' ? 'video' : 'audio'
             };
 
         } catch (error) {
@@ -292,12 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     class="btn-primary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
                                 <i class="fas fa-download"></i> ${isAudio ? 'Descargar MP3' : 'Descargar Video'}
                             </button>
-                            ${!isAudio ? `
-                                <button onclick="downloadFile('${data.downloadUrl}', 'audio')" 
-                                        class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
-                                    <i class="fas fa-music"></i> Solo Audio
-                                </button>
-                            ` : ''}
                             <button onclick="copyLink('${data.downloadUrl}')" 
                                     class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
                                 <i class="fas fa-copy"></i> Copiar enlace
