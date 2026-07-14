@@ -115,7 +115,7 @@
                     </button>
                 </div>
 
-                <!-- ===== SELECTOR DE FORMATO (NUEVO) ===== -->
+                <!-- ===== SELECTOR DE FORMATO CON TEXTO DINÁMICO ===== -->
                 <div class="format-selector" style="
                     display: flex;
                     gap: 12px;
@@ -159,6 +159,20 @@
                     ">
                         <i class="fas fa-music"></i> MP3
                     </button>
+                    
+                    <!-- 🔥 TEXTO DINÁMICO DEL FORMATO SELECCIONADO -->
+                    <span id="formatLabel" style="
+                        margin-left: auto;
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: var(--primary-color);
+                        background: var(--bg-card);
+                        padding: 4px 14px;
+                        border-radius: 20px;
+                        border: 1px solid var(--border-color);
+                    ">
+                        Formato seleccionado: MP4 Video
+                    </span>
                 </div>
 
                 <!-- Resultado -->
