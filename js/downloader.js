@@ -12,12 +12,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== ELEMENTOS DEL SELECTOR DE FORMATO =====
     const formatVideoBtn = document.getElementById('formatVideo');
     const formatAudioBtn = document.getElementById('formatAudio');
-    const formatLabel = document.getElementById('formatLabel'); // <-- TEXTO DINÁMICO
+    const formatLabel = document.getElementById('formatLabel');
 
     // ===== FUNCIÓN PARA ACTUALIZAR BOTONES Y TEXTO =====
     function updateFormatSelection(format) {
         if (format === 'mp4') {
-            // Activar MP4, desactivar MP3
             formatVideoBtn.style.borderColor = 'var(--primary-color)';
             formatVideoBtn.style.background = 'var(--primary-color)';
             formatVideoBtn.style.color = 'white';
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formatAudioBtn.style.color = 'var(--text-primary)';
             formatAudioBtn.classList.remove('active');
 
-            // 🔥 ACTUALIZAR EL TEXTO
             if (formatLabel) {
                 formatLabel.textContent = 'Formato seleccionado: MP4 Video';
                 formatLabel.style.color = 'var(--primary-color)';
@@ -39,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ Formato cambiado a: MP4');
 
         } else if (format === 'mp3') {
-            // Activar MP3, desactivar MP4
             formatAudioBtn.style.borderColor = 'var(--primary-color)';
             formatAudioBtn.style.background = 'var(--primary-color)';
             formatAudioBtn.style.color = 'white';
@@ -50,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formatVideoBtn.style.color = 'var(--text-primary)';
             formatVideoBtn.classList.remove('active');
 
-            // 🔥 ACTUALIZAR EL TEXTO
             if (formatLabel) {
                 formatLabel.textContent = 'Formato seleccionado: MP3 Audio';
                 formatLabel.style.color = 'var(--secondary-color)';
@@ -62,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== EVENT LISTENERS DE LOS BOTONES =====
+    // ===== EVENT LISTENERS =====
     if (formatVideoBtn && formatAudioBtn) {
         formatVideoBtn.addEventListener('click', function() {
             if (selectedFormat === 'mp4') return;
@@ -74,7 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateFormatSelection('mp3');
         });
 
-        // Inicializar con MP4
         updateFormatSelection('mp4');
     }
 
@@ -155,6 +150,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (response.success) {
+                // 🔥 FORZAR EL FORMATO SELECCIONADO EN LA RESPUESTA
+                response.type = selectedFormat === 'mp4' ? 'video' : 'audio';
+                response.format = selectedFormat;
+                response.size = selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3';
+                
                 showResult(response);
                 saveToHistory(response.title, platform);
                 App.updateStats('downloads');
@@ -201,11 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     thumbnail: result.image || 'https://picsum.photos/seed/fallback/400/300',
                     downloadUrl: result.download,
                     platform: 'youtube',
-                    format: fallbackEndpoint === 'ytmp4' ? 'mp4' : 'mp3',
-                    size: fallbackEndpoint === 'ytmp4' ? 'Video MP4' : 'Audio MP3',
                     views: result.views || '0',
-                    likes: result.likes || '0',
-                    type: fallbackEndpoint === 'ytmp4' ? 'video' : 'audio'
+                    likes: result.likes || '0'
                 };
             }
 
@@ -217,11 +214,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 thumbnail: result.image || 'https://picsum.photos/seed/success/400/300',
                 downloadUrl: result.download,
                 platform: 'youtube',
-                format: selectedFormat,
-                size: selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3',
                 views: result.views || '0',
-                likes: result.likes || '0',
-                type: selectedFormat === 'mp4' ? 'video' : 'audio'
+                likes: result.likes || '0'
             };
 
         } catch (error) {
@@ -261,15 +255,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     platform: platform,
                     quality: '1080p',
                     icon: icons[platform] || 'fas fa-video',
-                    size: '45.2 MB',
-                    format: 'video',
-                    type: 'video'
+                    size: '45.2 MB'
                 });
             }, 2000);
         });
     }
 
-    // ===== MOSTRAR RESULTADO =====
+    // ===== MOSTRAR RESULTADO - BADGE FORZADO =====
     function showResult(data) {
         const platformColors = {
             tiktok: '#FF0050',
@@ -280,7 +272,12 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const color = platformColors[data.platform] || 'var(--primary-color)';
-        const isAudio = data.type === 'audio';
+        // 🔥 USAR EL FORMATO SELECCIONADO, NO EL DE LA API
+        const isAudio = selectedFormat === 'mp3';
+        const formatDisplay = isAudio ? 'AUDIO MP3' : 'VIDEO MP4';
+        const formatLabelText = isAudio ? 'MP3 • 128kbps' : 'MP4 • HD';
+        const buttonText = isAudio ? 'Descargar MP3' : 'Descargar Video';
+        const iconClass = isAudio ? 'fa-music' : 'fa-video';
 
         resultDiv.innerHTML = `
             <div style="
@@ -293,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 position: relative;
                 overflow: hidden;
             ">
+                <!-- 🔥 BADGE FORZADO AL FORMATO SELECCIONADO -->
                 <div style="
                     position: absolute;
                     top: 0;
@@ -307,8 +305,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     align-items: center;
                     gap: 6px;
                 ">
-                    <i class="${isAudio ? 'fas fa-music' : 'fas fa-video'}"></i>
-                    ${isAudio ? 'AUDIO MP3' : 'VIDEO MP4'}
+                    <i class="fas ${iconClass}"></i>
+                    ${formatDisplay}
                 </div>
 
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
@@ -330,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${isAudio ? '🎵 Audio listo para descargar' : '🎬 Video listo para descargar'}
                         </h3>
                         <p style="color: var(--text-light); font-size: 14px;">
-                            ${isAudio ? 'Formato MP3 • Calidad 128kbps' : 'Formato MP4 • Calidad HD'}
+                            Formato ${formatLabelText}
                         </p>
                     </div>
                 </div>
@@ -353,15 +351,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             </p>
                             ${data.author ? `<p style="color: var(--text-secondary); font-size:14px;"><i class="fas fa-user"></i> ${data.author}</p>` : ''}
                             <p style="color: var(--text-secondary); font-size:14px; display:flex; align-items:center; gap:8px; margin-top:4px;">
-                                ${isAudio ? '<i class="fas fa-music" style="color: ' + color + ';"></i>' : '<i class="fas fa-video" style="color: ' + color + ';"></i>'}
-                                ${isAudio ? 'MP3 • 128kbps' : 'MP4 • HD'}
+                                <i class="fas ${iconClass}" style="color: ${color};"></i>
+                                ${formatLabelText}
                                 ${data.views ? `• 👁️ ${formatViews(data.views)}` : ''}
                             </p>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-                            <button onclick="downloadFile('${data.downloadUrl}', '${data.type}')" 
+                            <button onclick="downloadFile('${data.downloadUrl}', '${isAudio ? 'audio' : 'video'}')" 
                                     class="btn-primary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
-                                <i class="fas fa-download"></i> ${isAudio ? 'Descargar MP3' : 'Descargar Video'}
+                                <i class="fas fa-download"></i> ${buttonText}
                             </button>
                             <button onclick="copyLink('${data.downloadUrl}')" 
                                     class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
