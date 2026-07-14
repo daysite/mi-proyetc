@@ -80,7 +80,7 @@
     <!-- CONTENIDO PRINCIPAL -->
     <main class="tab-content">
 
-        <!-- PESTAÑA 1: DESCARGADOR -->
+        <!-- ==================== PESTAÑA 1: DESCARGADOR ==================== -->
         <section id="downloader" class="tab-panel active">
             <div class="panel-header">
                 <h2><i class="fas fa-download"></i> Descargador de Videos</h2>
@@ -88,12 +88,13 @@
             </div>
             
             <div class="downloader-container">
+                <!-- Botones de plataforma -->
                 <div class="platform-buttons">
-                    <button class="platform-btn active" data-platform="tiktok">
-                        <i class="fab fa-tiktok"></i> TikTok
-                    </button>
-                    <button class="platform-btn" data-platform="youtube">
+                    <button class="platform-btn active" data-platform="youtube">
                         <i class="fab fa-youtube"></i> YouTube
+                    </button>
+                    <button class="platform-btn" data-platform="tiktok">
+                        <i class="fab fa-tiktok"></i> TikTok
                     </button>
                     <button class="platform-btn" data-platform="instagram">
                         <i class="fab fa-instagram"></i> Instagram
@@ -106,17 +107,66 @@
                     </button>
                 </div>
                 
+                <!-- Input de URL -->
                 <div class="url-input-group">
-                    <input type="text" id="videoUrl" placeholder="Pega aquí el enlace del video...">
+                    <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=VIDEO_ID">
                     <button id="downloadBtn" class="btn-primary">
                         <i class="fas fa-download"></i> Descargar
                     </button>
                 </div>
 
+                <!-- ===== SELECTOR DE FORMATO (NUEVO) ===== -->
+                <div class="format-selector" style="
+                    display: flex;
+                    gap: 12px;
+                    margin: 16px 0;
+                    padding: 12px 16px;
+                    background: var(--bg-input);
+                    border-radius: var(--radius-sm);
+                    align-items: center;
+                    flex-wrap: wrap;
+                ">
+                    <label style="font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-file"></i> Formato:
+                    </label>
+                    <button id="formatVideo" class="format-btn active" data-format="mp4" style="
+                        padding: 8px 20px;
+                        border: 2px solid var(--primary-color);
+                        border-radius: 8px;
+                        background: var(--primary-color);
+                        color: white;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: var(--transition);
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <i class="fas fa-video"></i> MP4 HD
+                    </button>
+                    <button id="formatAudio" class="format-btn" data-format="mp3" style="
+                        padding: 8px 20px;
+                        border: 2px solid var(--border-color);
+                        border-radius: 8px;
+                        background: var(--bg-card);
+                        color: var(--text-primary);
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: var(--transition);
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <i class="fas fa-music"></i> MP3
+                    </button>
+                </div>
+
+                <!-- Resultado -->
                 <div id="downloadResult" class="result-container">
                     <!-- Resultados dinámicos -->
                 </div>
 
+                <!-- Historial -->
                 <div class="history-section">
                     <h3><i class="fas fa-history"></i> Historial de Descargas</h3>
                     <ul id="historyList">
@@ -126,7 +176,7 @@
             </div>
         </section>
 
-        <!-- PESTAÑA 2: IA CHAT -->
+        <!-- ==================== PESTAÑA 2: IA CHAT ==================== -->
         <section id="ai-chat" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-robot"></i> Asistente IA</h2>
@@ -144,6 +194,7 @@
                                 <li><strong>/resumir</strong> [texto] - Resumir textos largos</li>
                                 <li><strong>/traducir</strong> [texto] a [idioma] - Traducir</li>
                                 <li><strong>/idea</strong> [tema] - Generar ideas creativas</li>
+                                <li><strong>/ayuda</strong> - Ver todos los comandos</li>
                             </ul>
                         </div>
                     </div>
@@ -159,11 +210,12 @@
                     <button onclick="insertCommand('/resumir ')"><i class="fas fa-file-alt"></i> Resumir</button>
                     <button onclick="insertCommand('/traducir ')"><i class="fas fa-language"></i> Traducir</button>
                     <button onclick="insertCommand('/idea ')"><i class="fas fa-lightbulb"></i> Ideas</button>
+                    <button onclick="insertCommand('/ayuda')"><i class="fas fa-question-circle"></i> Ayuda</button>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 3: ARTE IA -->
+        <!-- ==================== PESTAÑA 3: ARTE IA ==================== -->
         <section id="art-generator" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-palette"></i> Generador de Arte IA</h2>
@@ -175,11 +227,13 @@
                     <textarea id="artPrompt" placeholder="Describe la imagen que quieres crear..."></textarea>
                     <div class="art-options">
                         <select id="artStyle">
-                            <option value="realistic">Realista</option>
-                            <option value="anime">Anime</option>
-                            <option value="cartoon">Dibujo animado</option>
-                            <option value="oil-painting">Óleo</option>
-                            <option value="watercolor">Acuarela</option>
+                            <option value="realistic">🎨 Realista</option>
+                            <option value="anime">🌸 Anime</option>
+                            <option value="cartoon">✏️ Dibujo animado</option>
+                            <option value="oil-painting">🖼️ Óleo</option>
+                            <option value="watercolor">💧 Acuarela</option>
+                            <option value="cyberpunk">🌃 Cyberpunk</option>
+                            <option value="fantasy">🐉 Fantasía</option>
                         </select>
                         <button id="generateArtBtn" class="btn-primary">
                             <i class="fas fa-wand-magic-sparkles"></i> Generar
@@ -188,14 +242,15 @@
                 </div>
                 <div id="artResult" class="art-result">
                     <div class="placeholder-art">
-                        <i class="fas fa-image" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i class="fas fa-image"></i>
                         <p>Tu imagen aparecerá aquí</p>
+                        <small>Describe lo que quieres crear</small>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 4: QR GENERATOR -->
+        <!-- ==================== PESTAÑA 4: QR GENERATOR ==================== -->
         <section id="qr-generator" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-qrcode"></i> Generador de Códigos QR</h2>
@@ -216,6 +271,7 @@
                             <option value="150">Pequeño</option>
                             <option value="250" selected>Mediano</option>
                             <option value="400">Grande</option>
+                            <option value="600">Extra Grande</option>
                         </select>
                     </label>
                     <label>
@@ -225,8 +281,9 @@
                 </div>
                 <div id="qrResult" class="qr-result">
                     <div class="placeholder-qr">
-                        <i class="fas fa-qrcode" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i class="fas fa-qrcode"></i>
                         <p>Tu código QR aparecerá aquí</p>
+                        <small>Ingresa un texto y haz clic en generar</small>
                     </div>
                 </div>
                 <button id="downloadQrBtn" class="btn-secondary" style="display:none;">
@@ -235,7 +292,7 @@
             </div>
         </section>
 
-        <!-- PESTAÑA 5: MUSIC FINDER -->
+        <!-- ==================== PESTAÑA 5: MUSIC FINDER ==================== -->
         <section id="music-finder" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-music"></i> Buscador de Música</h2>
@@ -244,21 +301,22 @@
             
             <div class="music-container">
                 <div class="music-search">
-                    <input type="text" id="musicSearch" placeholder="Buscar canción, artista o álbum...">
+                    <input type="text" id="musicSearch" placeholder="Ej: TWICE, Bad Bunny, Bohemian Rhapsody">
                     <button id="searchMusicBtn" class="btn-primary">
                         <i class="fas fa-search"></i> Buscar
                     </button>
                 </div>
                 <div id="musicResults" class="music-results">
                     <div class="placeholder-music">
-                        <i class="fas fa-headphones" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i class="fas fa-headphones"></i>
                         <p>Busca tu música favorita</p>
+                        <small>Ejemplo: Bohemian Rhapsody, Imagine, etc.</small>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 6: CALENDAR -->
+        <!-- ==================== PESTAÑA 6: CALENDARIO ==================== -->
         <section id="calendar" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-calendar-alt"></i> Calendario de Contenido</h2>
@@ -267,21 +325,25 @@
             
             <div class="calendar-container">
                 <div class="calendar-nav">
-                    <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                    <button id="prevMonth" class="icon-btn"><i class="fas fa-chevron-left"></i></button>
                     <h3 id="currentMonthYear">Enero 2024</h3>
-                    <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                    <button id="nextMonth" class="icon-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 <div class="calendar-grid" id="calendarGrid">
                     <!-- Días del mes generados por JS -->
                 </div>
                 <div class="event-form">
-                    <h4>Agregar Evento</h4>
-                    <input type="date" id="eventDate">
-                    <input type="text" id="eventTitle" placeholder="Título del evento">
-                    <button id="addEventBtn" class="btn-primary">Agregar</button>
+                    <h4>📝 Agregar Evento</h4>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <input type="date" id="eventDate" style="flex:1; min-width:150px;">
+                        <input type="text" id="eventTitle" placeholder="Título del evento" style="flex:2; min-width:200px;">
+                        <button id="addEventBtn" class="btn-primary" style="flex:0 0 auto;">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
                 </div>
                 <div id="eventList" class="event-list">
-                    <h4>Eventos del mes</h4>
+                    <h4>📋 Eventos del mes</h4>
                     <ul id="eventsList">
                         <li class="empty-events">No hay eventos programados</li>
                     </ul>
@@ -289,7 +351,7 @@
             </div>
         </section>
 
-        <!-- PESTAÑA 7: CURRENCY CONVERTER -->
+        <!-- ==================== PESTAÑA 7: CONVERSOR DE MONEDAS ==================== -->
         <section id="currency" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-dollar-sign"></i> Conversor de Monedas</h2>
@@ -306,27 +368,27 @@
                         <div>
                             <label>De:</label>
                             <select id="fromCurrency">
-                                <option value="USD">USD - Dólar USA</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="PEN">PEN - Sol Peruano</option>
-                                <option value="MXN">MXN - Peso Mexicano</option>
-                                <option value="ARS">ARS - Peso Argentino</option>
-                                <option value="CLP">CLP - Peso Chileno</option>
-                                <option value="COP">COP - Peso Colombiano</option>
-                                <option value="BRL">BRL - Real Brasileño</option>
+                                <option value="USD">🇺🇸 USD - Dólar USA</option>
+                                <option value="EUR">🇪🇺 EUR - Euro</option>
+                                <option value="PEN">🇵🇪 PEN - Sol Peruano</option>
+                                <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
+                                <option value="ARS">🇦🇷 ARS - Peso Argentino</option>
+                                <option value="CLP">🇨🇱 CLP - Peso Chileno</option>
+                                <option value="COP">🇨🇴 COP - Peso Colombiano</option>
+                                <option value="BRL">🇧🇷 BRL - Real Brasileño</option>
                             </select>
                         </div>
                         <div>
                             <label>A:</label>
                             <select id="toCurrency">
-                                <option value="USD">USD - Dólar USA</option>
-                                <option value="EUR" selected>EUR - Euro</option>
-                                <option value="PEN">PEN - Sol Peruano</option>
-                                <option value="MXN">MXN - Peso Mexicano</option>
-                                <option value="ARS">ARS - Peso Argentino</option>
-                                <option value="CLP">CLP - Peso Chileno</option>
-                                <option value="COP">COP - Peso Colombiano</option>
-                                <option value="BRL">BRL - Real Brasileño</option>
+                                <option value="USD">🇺🇸 USD - Dólar USA</option>
+                                <option value="EUR" selected>🇪🇺 EUR - Euro</option>
+                                <option value="PEN">🇵🇪 PEN - Sol Peruano</option>
+                                <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
+                                <option value="ARS">🇦🇷 ARS - Peso Argentino</option>
+                                <option value="CLP">🇨🇱 CLP - Peso Chileno</option>
+                                <option value="COP">🇨🇴 COP - Peso Colombiano</option>
+                                <option value="BRL">🇧🇷 BRL - Real Brasileño</option>
                             </select>
                         </div>
                     </div>
@@ -335,14 +397,14 @@
                     </button>
                     <div id="currencyResult" class="currency-result">
                         <div class="placeholder-currency">
-                            <p>Ingresa una cantidad y presiona convertir</p>
+                            <p>💱 Ingresa una cantidad y presiona convertir</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 8: WEATHER -->
+        <!-- ==================== PESTAÑA 8: CLIMA ==================== -->
         <section id="weather" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-cloud-sun"></i> Clima en tu Ubicación</h2>
@@ -361,14 +423,15 @@
                 </div>
                 <div id="weatherResult" class="weather-result">
                     <div class="placeholder-weather">
-                        <i class="fas fa-cloud-sun" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i class="fas fa-cloud-sun"></i>
                         <p>Busca una ciudad para ver el clima</p>
+                        <small>Ejemplo: Lima, Bogotá, Madrid</small>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 9: NEWS -->
+        <!-- ==================== PESTAÑA 9: NOTICIAS ==================== -->
         <section id="news" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-newspaper"></i> Noticias Destacadas</h2>
@@ -377,23 +440,23 @@
             
             <div class="news-container">
                 <div class="news-categories">
-                    <button class="category-btn active" data-category="general">General</button>
-                    <button class="category-btn" data-category="technology">Tecnología</button>
-                    <button class="category-btn" data-category="business">Negocios</button>
-                    <button class="category-btn" data-category="sports">Deportes</button>
-                    <button class="category-btn" data-category="entertainment">Espectáculos</button>
-                    <button class="category-btn" data-category="science">Ciencia</button>
+                    <button class="category-btn active" data-category="general">📰 General</button>
+                    <button class="category-btn" data-category="technology">💻 Tecnología</button>
+                    <button class="category-btn" data-category="business">📈 Negocios</button>
+                    <button class="category-btn" data-category="sports">⚽ Deportes</button>
+                    <button class="category-btn" data-category="entertainment">🎬 Espectáculos</button>
+                    <button class="category-btn" data-category="science">🔬 Ciencia</button>
                 </div>
                 <div id="newsResults" class="news-grid">
                     <div class="placeholder-news">
-                        <i class="fas fa-newspaper" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i class="fas fa-newspaper"></i>
                         <p>Cargando noticias...</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- PESTAÑA 10: STATS -->
+        <!-- ==================== PESTAÑA 10: ESTADÍSTICAS ==================== -->
         <section id="stats" class="tab-panel">
             <div class="panel-header">
                 <h2><i class="fas fa-chart-bar"></i> Estadísticas</h2>
@@ -450,7 +513,7 @@
 
     <!-- FOOTER -->
     <footer>
-        <p>© 2024 Utility Hub - Creado con <i class="fas fa-heart" style="color: #FF6B6B;"></i> para la comunidad</p>
+        <p>© 2024 Utility Hub - Creado con <i class="fas fa-heart"></i> para la comunidad</p>
     </footer>
 
     <!-- SCRIPTS -->
