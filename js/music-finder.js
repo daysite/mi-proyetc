@@ -1,12 +1,21 @@
-// ===== BUSCADOR DE MÚSICA CON API REAL =====
+// ===== BUSCADOR DE MÚSICA CON API REAL - CORREGIDO =====
 document.addEventListener('DOMContentLoaded', function() {
     const musicSearch = document.getElementById('musicSearch');
     const searchBtn = document.getElementById('searchMusicBtn');
     const resultsDiv = document.getElementById('musicResults');
 
+    // Limpiar placeholder con ejemplos
+    musicSearch.placeholder = 'Ej: TWICE, Bad Bunny, Bohemian Rhapsody';
+
     // Función para buscar en la API
     async function searchMusic(query) {
-        if (!query || query.trim() === '') {
+        // Limpiar la búsqueda: eliminar comillas y espacios extras
+        let cleanQuery = query.trim()
+            .replace(/^["']|["']$/g, '') // Eliminar comillas al inicio/fin
+            .replace(/\s*,\s*/g, ' ') // Reemplazar comas por espacios
+            .trim();
+
+        if (!cleanQuery || cleanQuery === '') {
             App.showNotification('⚠️', 'Ingresa el nombre de una canción o artista');
             return;
         }
@@ -15,13 +24,13 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsDiv.innerHTML = `
             <div class="loading">
                 <i class="fas fa-spinner"></i>
-                <p>Buscando "${query}"...</p>
+                <p>Buscando "${cleanQuery}"...</p>
             </div>
         `;
 
         try {
             // Llamar a la API
-            const url = `https://api.delirius.store/search/ytsearch?q=${encodeURIComponent(query)}`;
+            const url = `https://api.delirius.store/search/ytsearch?q=${encodeURIComponent(cleanQuery)}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -29,8 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultsDiv.innerHTML = `
                     <div style="text-align:center; padding:40px; color: var(--text-light);">
                         <i class="fas fa-music" style="font-size:48px; display:block; margin-bottom:16px;"></i>
-                        <p>No se encontraron resultados para "${query}"</p>
-                        <p style="font-size:14px;">Intenta con otra búsqueda</p>
+                        <p>No se encontraron resultados para "${cleanQuery}"</p>
+                        <p style="font-size:14px;">Sugerencias: Escribe solo el nombre del artista o canción</p>
+                        <p style="font-size:13px; margin-top:8px; color: var(--text-light);">
+                            💡 Ejemplos: <strong>TWICE</strong>, <strong>Bad Bunny</strong>, <strong>Bohemian Rhapsody</strong>
+                        </p>
                     </div>
                 `;
                 return;
@@ -149,8 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Búsqueda automática al cargar con un ejemplo
-    setTimeout(() => {
-        musicSearch.placeholder = 'Ej: TWICE, BTS, Bad Bunny...';
-    }, 1000);
+    // Limpiar el input al hacer clic
+    musicSearch.addEventListener('focus', function() {
+        if (this.value === 'TWICE, Bad Bunny, Bohemian Rhapsody') {
+            this.value = '';
+        }
+    });
 });
