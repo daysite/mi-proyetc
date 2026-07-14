@@ -1,4 +1,4 @@
-// ===== DESCARGADOR DE VIDEOS Y AUDIO CON API REAL =====
+// ===== DESCARGADOR DE VIDEOS Y AUDIO CON API DE DELIRIUS =====
 document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.getElementById('downloadBtn');
     const videoUrlInput = document.getElementById('videoUrl');
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Función principal de descarga
+    // ===== FUNCIÓN PRINCIPAL DE DESCARGA =====
     async function downloadVideo(url, platform) {
         resultDiv.innerHTML = `
             <div class="loading" style="
@@ -77,9 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             let response;
 
-            // Si es YouTube, usar la API de audio
+            // Si es YouTube, usar la API de Delirius
             if (platform === 'youtube') {
-                response = await downloadAudio(url);
+                response = await downloadFromDelirius(url);
             } else {
                 // Para otras plataformas, simular (reemplazar con tu API)
                 response = await simulateApiCall(url, platform);
@@ -99,37 +99,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== FUNCIÓN PARA DESCARGAR AUDIO DE YOUTUBE =====
-    async function downloadAudio(url) {
+    // ===== API DE DELIRIUS - DESCARGA DE VIDEO Y AUDIO =====
+    async function downloadFromDelirius(url) {
         try {
-            // Llamar a la API de audio
-            const apiUrl = `https://api.delirius.store/download/ytmp3?url=${encodeURIComponent(url)}`;
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+            // Primero intentamos obtener video (mp4)
+            const videoUrl = `https://api.delirius.store/download/ytmp4?url=${encodeURIComponent(url)}`;
+            const videoResponse = await fetch(videoUrl);
+            const videoData = await videoResponse.json();
 
-            if (!data.status || !data.data) {
+            // Si falla el video, intentamos audio (mp3)
+            if (!videoData.status || !videoData.data) {
+                const audioUrl = `https://api.delirius.store/download/ytmp3?url=${encodeURIComponent(url)}`;
+                const audioResponse = await fetch(audioUrl);
+                const audioData = await audioResponse.json();
+
+                if (!audioData.status || !audioData.data) {
+                    return {
+                        success: false,
+                        message: 'No se pudo obtener el video o audio'
+                    };
+                }
+
+                const audioResult = audioData.data;
                 return {
-                    success: false,
-                    message: 'No se pudo obtener el audio'
+                    success: true,
+                    title: audioResult.title || 'Audio de YouTube',
+                    author: audioResult.author || 'Desconocido',
+                    thumbnail: audioResult.image || 'https://picsum.photos/seed/audio/400/300',
+                    downloadUrl: audioResult.download,
+                    platform: 'youtube',
+                    format: 'mp3',
+                    size: 'Audio MP3',
+                    views: audioResult.views || '0',
+                    likes: audioResult.likes || '0',
+                    type: 'audio'
                 };
             }
 
-            const audioData = data.data;
-
+            // Si el video funciona
+            const videoResult = videoData.data;
             return {
                 success: true,
-                title: audioData.title || 'Audio de YouTube',
-                author: audioData.author || 'Desconocido',
-                thumbnail: audioData.image || 'https://picsum.photos/seed/audio/400/300',
-                downloadUrl: audioData.download,
+                title: videoResult.title || 'Video de YouTube',
+                author: videoResult.author || 'Desconocido',
+                thumbnail: videoResult.image || 'https://picsum.photos/seed/video/400/300',
+                downloadUrl: videoResult.download,
                 platform: 'youtube',
-                format: 'mp3',
-                size: 'Audio MP3',
-                views: audioData.views || '0',
-                likes: audioData.likes || '0'
+                format: 'mp4',
+                size: 'Video MP4',
+                views: videoResult.views || '0',
+                likes: videoResult.likes || '0',
+                type: 'video'
             };
+
         } catch (error) {
-            console.error('Error al descargar audio:', error);
+            console.error('Error en Delirius API:', error);
             return {
                 success: false,
                 message: error.message || 'Error al conectar con la API'
@@ -137,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // SIMULACIÓN DE API para otras plataformas
+    // ===== SIMULACIÓN PARA OTRAS PLATAFORMAS =====
     function simulateApiCall(url, platform) {
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -166,13 +190,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     quality: '1080p',
                     icon: icons[platform] || 'fas fa-video',
                     size: '45.2 MB',
-                    format: 'video'
+                    format: 'video',
+                    type: 'video'
                 });
             }, 2000);
         });
     }
 
-    // Mostrar resultado - DISEÑO MEJORADO
+    // ===== MOSTRAR RESULTADO =====
     function showResult(data) {
         const platformColors = {
             tiktok: '#FF0050',
@@ -183,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const color = platformColors[data.platform] || 'var(--primary-color)';
-        const isAudio = data.format === 'mp3';
+        const isAudio = data.type === 'audio';
 
         resultDiv.innerHTML = `
             <div style="
@@ -212,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     gap: 6px;
                 ">
                     <i class="${isAudio ? 'fas fa-music' : 'fas fa-video'}"></i>
-                    ${isAudio ? 'AUDIO MP3' : data.platform.toUpperCase()}
+                    ${isAudio ? 'AUDIO MP3' : 'VIDEO MP4'}
                 </div>
 
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
@@ -231,10 +256,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div>
                         <h3 style="color: var(--text-primary); font-size: 20px;">
-                            ${isAudio ? '🎵 Audio listo para descargar' : '¡Video listo para descargar!'}
+                            ${isAudio ? '🎵 Audio listo para descargar' : '🎬 Video listo para descargar'}
                         </h3>
                         <p style="color: var(--text-light); font-size: 14px;">
-                            ${isAudio ? 'Formato MP3 • Calidad 128kbps' : `Calidad ${data.quality} • Tamaño ${data.size}`}
+                            ${isAudio ? 'Formato MP3 • Calidad 128kbps' : 'Formato MP4 • Calidad HD'}
                         </p>
                     </div>
                 </div>
@@ -258,21 +283,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${data.author ? `<p style="color: var(--text-secondary); font-size:14px;"><i class="fas fa-user"></i> ${data.author}</p>` : ''}
                             <p style="color: var(--text-secondary); font-size:14px; display:flex; align-items:center; gap:8px; margin-top:4px;">
                                 ${isAudio ? '<i class="fas fa-music" style="color: ' + color + ';"></i>' : '<i class="fas fa-video" style="color: ' + color + ';"></i>'}
-                                ${isAudio ? 'MP3 • 128kbps' : data.platform.toUpperCase() + ' • ' + data.quality}
+                                ${isAudio ? 'MP3 • 128kbps' : 'MP4 • HD'}
                                 ${data.views ? `• 👁️ ${formatViews(data.views)}` : ''}
                             </p>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-                            <button onclick="downloadFile('${data.downloadUrl}', '${isAudio ? 'audio' : 'video'}')" 
+                            <button onclick="downloadFile('${data.downloadUrl}', '${data.type}')" 
                                     class="btn-primary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
                                 <i class="fas fa-download"></i> ${isAudio ? 'Descargar MP3' : 'Descargar Video'}
                             </button>
-                            ${isAudio ? `
-                                <button onclick="copyLink('${data.downloadUrl}')" 
+                            ${!isAudio ? `
+                                <button onclick="downloadFile('${data.downloadUrl}', 'audio')" 
                                         class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
-                                    <i class="fas fa-copy"></i> Copiar enlace
+                                    <i class="fas fa-music"></i> Solo Audio
                                 </button>
                             ` : ''}
+                            <button onclick="copyLink('${data.downloadUrl}')" 
+                                    class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
+                                <i class="fas fa-copy"></i> Copiar enlace
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -440,38 +469,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // Función global para descargar archivo
+    // ===== FUNCIÓN GLOBAL PARA DESCARGAR ARCHIVO =====
     window.downloadFile = function(url, type) {
-        if (type === 'audio') {
-            // Descargar audio
-            App.showNotification('🎵', 'Descargando audio MP3...');
-            
-            // Crear un enlace de descarga
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `audio-${Date.now()}.mp3`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Animar barra de progreso
-            const progressBar = document.getElementById('progressBar');
-            if (progressBar) {
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 15;
-                    if (progress > 100) {
-                        progress = 100;
-                        clearInterval(interval);
-                        App.showNotification('✅', '¡Descarga completada!');
-                    }
-                    progressBar.style.width = progress + '%';
-                }, 300);
-            }
-        } else {
-            // Descargar video
-            App.showNotification('📥', `Descargando ${type}...`);
-            window.open(url, '_blank');
+        if (!url || url === '#') {
+            App.showNotification('⚠️', 'Enlace de descarga no disponible');
+            return;
+        }
+
+        App.showNotification('📥', `Descargando ${type === 'audio' ? 'audio MP3' : 'video MP4'}...`);
+        
+        // Crear un enlace de descarga
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = type === 'audio' ? `audio-${Date.now()}.mp3` : `video-${Date.now()}.mp4`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Animar barra de progreso
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    App.showNotification('✅', '¡Descarga completada!');
+                }
+                progressBar.style.width = progress + '%';
+            }, 300);
         }
     };
 
