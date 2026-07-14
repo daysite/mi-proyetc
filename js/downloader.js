@@ -9,49 +9,73 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedPlatform = 'youtube';
     let selectedFormat = 'mp4'; // Por defecto: video
 
-    // ===== SELECTOR DE FORMATO =====
+    // ===== ELEMENTOS DEL SELECTOR DE FORMATO =====
     const formatVideoBtn = document.getElementById('formatVideo');
     const formatAudioBtn = document.getElementById('formatAudio');
-    const formatLabel = document.getElementById('formatLabel'); // Nuevo: para mostrar el formato seleccionado
+    const formatLabel = document.getElementById('formatLabel'); // <-- TEXTO DINÁMICO
 
-    function updateFormatButtons(activeBtn, inactiveBtn, formatName) {
-        // Botón activo
-        activeBtn.style.borderColor = 'var(--primary-color)';
-        activeBtn.style.background = 'var(--primary-color)';
-        activeBtn.style.color = 'white';
-        activeBtn.classList.add('active');
-        
-        // Botón inactivo
-        inactiveBtn.style.borderColor = 'var(--border-color)';
-        inactiveBtn.style.background = 'var(--bg-card)';
-        inactiveBtn.style.color = 'var(--text-primary)';
-        inactiveBtn.classList.remove('active');
+    // ===== FUNCIÓN PARA ACTUALIZAR BOTONES Y TEXTO =====
+    function updateFormatSelection(format) {
+        if (format === 'mp4') {
+            // Activar MP4, desactivar MP3
+            formatVideoBtn.style.borderColor = 'var(--primary-color)';
+            formatVideoBtn.style.background = 'var(--primary-color)';
+            formatVideoBtn.style.color = 'white';
+            formatVideoBtn.classList.add('active');
+            
+            formatAudioBtn.style.borderColor = 'var(--border-color)';
+            formatAudioBtn.style.background = 'var(--bg-card)';
+            formatAudioBtn.style.color = 'var(--text-primary)';
+            formatAudioBtn.classList.remove('active');
 
-        // 🔥 ACTUALIZAR EL TEXTO DEL FORMATO SELECCIONADO
-        if (formatLabel) {
-            formatLabel.textContent = `Formato seleccionado: ${formatName}`;
+            // 🔥 ACTUALIZAR EL TEXTO
+            if (formatLabel) {
+                formatLabel.textContent = 'Formato seleccionado: MP4 Video';
+                formatLabel.style.color = 'var(--primary-color)';
+            }
+            
+            selectedFormat = 'mp4';
+            App.showNotification('📹', 'Formato seleccionado: MP4 Video');
+            console.log('✅ Formato cambiado a: MP4');
+
+        } else if (format === 'mp3') {
+            // Activar MP3, desactivar MP4
+            formatAudioBtn.style.borderColor = 'var(--primary-color)';
+            formatAudioBtn.style.background = 'var(--primary-color)';
+            formatAudioBtn.style.color = 'white';
+            formatAudioBtn.classList.add('active');
+            
+            formatVideoBtn.style.borderColor = 'var(--border-color)';
+            formatVideoBtn.style.background = 'var(--bg-card)';
+            formatVideoBtn.style.color = 'var(--text-primary)';
+            formatVideoBtn.classList.remove('active');
+
+            // 🔥 ACTUALIZAR EL TEXTO
+            if (formatLabel) {
+                formatLabel.textContent = 'Formato seleccionado: MP3 Audio';
+                formatLabel.style.color = 'var(--secondary-color)';
+            }
+            
+            selectedFormat = 'mp3';
+            App.showNotification('🎵', 'Formato seleccionado: MP3 Audio');
+            console.log('✅ Formato cambiado a: MP3');
         }
     }
 
+    // ===== EVENT LISTENERS DE LOS BOTONES =====
     if (formatVideoBtn && formatAudioBtn) {
         formatVideoBtn.addEventListener('click', function() {
             if (selectedFormat === 'mp4') return;
-            selectedFormat = 'mp4';
-            updateFormatButtons(formatVideoBtn, formatAudioBtn, 'MP4 Video');
-            App.showNotification('📹', 'Formato seleccionado: MP4 Video');
-            console.log('✅ Formato cambiado a: MP4');
+            updateFormatSelection('mp4');
         });
 
         formatAudioBtn.addEventListener('click', function() {
             if (selectedFormat === 'mp3') return;
-            selectedFormat = 'mp3';
-            updateFormatButtons(formatAudioBtn, formatVideoBtn, 'MP3 Audio');
-            App.showNotification('🎵', 'Formato seleccionado: MP3 Audio');
-            console.log('✅ Formato cambiado a: MP3');
+            updateFormatSelection('mp3');
         });
 
         // Inicializar con MP4
-        updateFormatButtons(formatVideoBtn, formatAudioBtn, 'MP4 Video');
+        updateFormatSelection('mp4');
     }
 
     // Seleccionar plataforma
@@ -70,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             videoUrlInput.placeholder = placeholders[selectedPlatform] || 'Pega aquí el enlace...';
             
-            // Efecto visual
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = 'scale(1)';
@@ -101,7 +124,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== FUNCIÓN PRINCIPAL DE DESCARGA =====
     async function downloadVideo(url, platform) {
-        // Mostrar qué formato se está usando
         const formatLabelText = selectedFormat === 'mp4' ? 'MP4 Video' : 'MP3 Audio';
         
         resultDiv.innerHTML = `
@@ -126,11 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             let response;
 
-            // Si es YouTube, usar la API de Delirius con el formato seleccionado
             if (platform === 'youtube') {
                 response = await downloadFromDelirius(url);
             } else {
-                // Para otras plataformas, simular (reemplazar con tu API)
                 response = await simulateApiCall(url, platform);
             }
 
@@ -148,10 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== API DE DELIRIUS - USA EL FORMATO SELECCIONADO =====
+    // ===== API DE DELIRIUS =====
     async function downloadFromDelirius(url) {
         try {
-            // 🔥 AQUÍ ESTÁ EL CAMBIO: Usa el formato seleccionado
             const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
             const apiUrl = `https://api.delirius.store/download/${endpoint}?url=${encodeURIComponent(url)}`;
             
@@ -161,10 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (!data.status || !data.data) {
-                // Si falla, intentar con el otro formato
                 const fallbackEndpoint = selectedFormat === 'mp4' ? 'ytmp3' : 'ytmp4';
                 const fallbackUrl = `https://api.delirius.store/download/${fallbackEndpoint}?url=${encodeURIComponent(url)}`;
-                console.log(`🔄 Fallback a: ${fallbackUrl}`);
                 
                 const fallbackResponse = await fetch(fallbackUrl);
                 const fallbackData = await fallbackResponse.json();
@@ -200,11 +217,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 thumbnail: result.image || 'https://picsum.photos/seed/success/400/300',
                 downloadUrl: result.download,
                 platform: 'youtube',
-                format: selectedFormat, // 🔥 EL FORMATO QUE ELIGIÓ EL USUARIO
+                format: selectedFormat,
                 size: selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3',
                 views: result.views || '0',
                 likes: result.likes || '0',
-                type: selectedFormat === 'mp4' ? 'video' : 'audio' // 🔥 EL TIPO CORRECTO
+                type: selectedFormat === 'mp4' ? 'video' : 'audio'
             };
 
         } catch (error) {
@@ -276,7 +293,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 position: relative;
                 overflow: hidden;
             ">
-                <!-- Badge de formato -->
                 <div style="
                     position: absolute;
                     top: 0;
@@ -355,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 
-                <!-- Barra de progreso de descarga -->
                 <div style="
                     width: 100%;
                     height: 6px;
@@ -527,7 +542,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         App.showNotification('📥', `Descargando ${type === 'audio' ? 'audio MP3' : 'video MP4'}...`);
         
-        // Crear un enlace de descarga
         const link = document.createElement('a');
         link.href = url;
         link.download = type === 'audio' ? `audio-${Date.now()}.mp3` : `video-${Date.now()}.mp4`;
@@ -536,7 +550,6 @@ document.addEventListener('DOMContentLoaded', function() {
         link.click();
         document.body.removeChild(link);
         
-        // Animar barra de progreso
         const progressBar = document.getElementById('progressBar');
         if (progressBar) {
             let progress = 0;
@@ -555,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar historial
     renderHistory();
     
-    // Mostrar el formato seleccionado al cargar
     console.log(`🎯 Formato inicial: ${selectedFormat.toUpperCase()}`);
 });
 
