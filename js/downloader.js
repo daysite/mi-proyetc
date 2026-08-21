@@ -1,7 +1,7 @@
 // ===== DESCARGADOR CON API DELIRIUS.ONLINE =====
 // Desarrollado por Ander
 
-// 🔥 API QUE SÍ FUNCIONA
+// 🔥 API CORRECTA - ENDPOINTS EN MINÚSCULAS
 const API_BASE = 'https://api.delirius.online';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -154,8 +154,8 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                // 🔥 USAR API DELIRIUS.ONLINE
-                const endpoint = selectedFormat === 'mp4' ? 'YTMP4' : 'YTMP3';
+                // 🔥 ENDPOINTS EN MINÚSCULAS
+                const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
                 const apiUrl = `${API_BASE}/download/${endpoint}?url=${encodeURIComponent(url)}`;
                 
                 console.log(`📡 Llamando a: ${apiUrl}`);
@@ -558,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderHistory();
     console.log('🎯 Descargador con API Delirius Online iniciado');
     console.log('📡 API_BASE:', API_BASE);
-    console.log('✅ Endpoints: YTMP4 (video) y YTMP3 (audio)');
+    console.log('✅ Endpoints: ytmp4 (video) y ytmp3 (audio)');
 });
 
 // Actualizar estadísticas
