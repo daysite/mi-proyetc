@@ -1,8 +1,17 @@
-// ===== DESCARGADOR CON PROXY CORS =====
+// ===== DESCARGADOR CON PROXY ALTERNATIVO =====
 // Desarrollado por Ander
 
-// 🔥 USAR PROXY CORS PARA EVITAR BLOQUEOS
-const PROXY = 'https://corsproxy.io/?';
+// 🔥 PROXY ALTERNATIVO - USAR CUALQUIERA DE ESTOS
+const PROXY_OPTIONS = [
+    'https://api.allorigins.win/raw?url=',
+    'https://cors-anywhere.herokuapp.com/',
+    'https://proxy.cors.sh/',
+    '' // Sin proxy (fallback)
+];
+
+// Intentar con el primer proxy que funcione
+let ACTIVE_PROXY = PROXY_OPTIONS[0];
+
 const API_URL = 'https://hub.convert1s.com/api/download';
 const ORIGIN = 'https://real-y2mate.com';
 const REFERER = 'https://real-y2mate.com/';
@@ -27,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const formatAudioBtn = document.getElementById('formatAudio');
     const formatLabel = document.getElementById('formatLabel');
 
-    // ===== FUNCIONES DEL SCRAPER CON PROXY =====
+    // ===== FUNCIONES DEL SCRAPER =====
     function baseHeaders(extra = {}) {
         return {
             accept: 'application/json',
@@ -63,27 +72,47 @@ document.addEventListener('DOMContentLoaded', function() {
             : `${min}:${String(sec).padStart(2, '0')}`;
     }
 
+    // ===== INTENTAR CON DIFERENTES PROXIES =====
     async function fetchWithProxy(url, options = {}) {
-        // Si el proxy no funciona, probar sin él
-        try {
-            const proxyUrl = `${PROXY}${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'Origin': ORIGIN,
-                    'Referer': REFERER
+        // Probar cada proxy en orden
+        for (let i = 0; i < PROXY_OPTIONS.length; i++) {
+            const proxy = PROXY_OPTIONS[i];
+            try {
+                let finalUrl = url;
+                let fetchOptions = { ...options };
+                
+                if (proxy) {
+                    // Si el proxy requiere encodeURIComponent
+                    if (proxy.includes('allorigins') || proxy.includes('cors.sh')) {
+                        finalUrl = `${proxy}${encodeURIComponent(url)}`;
+                    } else {
+                        finalUrl = `${proxy}${url}`;
+                    }
+                    // Para algunos proxies, necesitamos eliminar ciertos headers
+                    if (proxy.includes('cors-anywhere')) {
+                        fetchOptions.headers = {
+                            ...fetchOptions.headers,
+                            'Origin': ORIGIN,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        };
+                    }
                 }
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response;
-        } catch (error) {
-            console.warn('⚠️ Proxy falló, intentando sin proxy...', error);
-            // Fallback: intentar sin proxy
-            const response = await fetch(url, options);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response;
+                
+                console.log(`🔄 Intentando proxy ${i+1}/${PROXY_OPTIONS.length}: ${proxy || 'sin proxy'}`);
+                console.log(`📡 URL: ${finalUrl}`);
+                
+                const response = await fetch(finalUrl, fetchOptions);
+                if (response.ok) {
+                    console.log(`✅ Proxy ${i+1} funcionó!`);
+                    ACTIVE_PROXY = proxy;
+                    return response;
+                }
+                console.log(`❌ Proxy ${i+1} falló con HTTP ${response.status}`);
+            } catch (error) {
+                console.log(`❌ Proxy ${i+1} falló:`, error.message);
+            }
         }
+        throw new Error('Todos los proxies fallaron. Verifica tu conexión a internet.');
     }
 
     async function convert(url, quality = DEFAULT_QUALITY) {
@@ -257,8 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="fas fa-spinner" style="font-size: 40px; color: var(--primary-color);"></i>
                 <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Procesando tu solicitud...</p>
                 <p style="color: var(--text-light); font-size: 14px;">Formato seleccionado: <strong style="color: var(--primary-color);">${formatLabelText}</strong></p>
-                <p style="color: var(--text-light); font-size: 12px; margin-top: 4px;">⏳ Esto puede tomar hasta 30 segundos...</p>
-                <p style="color: var(--text-light); font-size: 11px; margin-top: 4px;">🔒 Usando proxy para evitar bloqueos</p>
+                <p style="color: var(--text-light); font-size: 12px; margin-top: 4px;">⏳ Intentando con múltiples proxies...</p>
+                <p style="color: var(--text-light); font-size: 11px; margin-top: 4px;">🔒 Esto puede tomar hasta 60 segundos</p>
                 <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
                      background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
                     <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
@@ -303,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             let errorMsg = error.message || 'Error desconocido';
             if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-                errorMsg = 'No se pudo conectar con el servidor. El proxy puede estar bloqueado. Intenta con otro enlace o más tarde.';
+                errorMsg = 'No se pudo conectar con el servidor. Todos los proxies fallaron. Intenta: 1) Usar otro enlace, 2) Probar más tarde, 3) Usar una VPN.';
             }
             showError('❌ ' + errorMsg);
         }
@@ -551,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p style="color: #FF6B6B; font-weight:700; font-size:16px;">¡Ups! Algo salió mal</p>
                     <p style="color: var(--text-secondary);">${message}</p>
                     <p style="color: var(--text-light); font-size:12px; margin-top:4px;">
-                        💡 Verifica tu conexión a internet o prueba con otro enlace.
+                        💡 Alternativas: 1) Prueba con otro enlace, 2) Usa una VPN, 3) Intenta más tarde.
                     </p>
                 </div>
             </div>
@@ -646,9 +675,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== INICIALIZAR =====
     renderHistory();
-    console.log('🎯 Descargador con proxy CORS iniciado');
-    console.log('📡 API_URL:', API_URL);
-    console.log('🔄 Proxy:', PROXY);
+    console.log('🎯 Descargador con múltiples proxies iniciado');
+    console.log('🔄 Proxies disponibles:', PROXY_OPTIONS.length);
 });
 
 // Actualizar estadísticas
