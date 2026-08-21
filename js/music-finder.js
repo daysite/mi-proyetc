@@ -1,31 +1,44 @@
-// ===== BUSCADOR DE MÚSICA - VERSIÓN SIMPLE =====
+// ===== BUSCADOR DE MÚSICA =====
 // Desarrollado por Ander
 
-const API_BASE = 'https://api.delirius.online';
+// 🔥 CAMBIAR EL NOMBRE DE LA VARIABLE PARA EVITAR CONFLICTOS
+const MUSIC_API_BASE = 'https://api.delirius.online';
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎵 Iniciando buscador de música...');
+    
     // Obtener elementos
     const input = document.getElementById('musicSearch');
     const boton = document.getElementById('searchMusicBtn');
     const resultados = document.getElementById('musicResults');
 
-    // Verificar que los elementos existen
+    // Verificar elementos
+    if (!input) console.error('❌ No se encontró el input #musicSearch');
+    if (!boton) console.error('❌ No se encontró el botón #searchMusicBtn');
+    if (!resultados) console.error('❌ No se encontró el contenedor #musicResults');
+
+    // Si falta algún elemento, mostrar error y salir
     if (!input || !boton || !resultados) {
-        console.error('❌ Error: No se encontraron los elementos del buscador');
-        console.log('Input:', input);
-        console.log('Botón:', boton);
-        console.log('Resultados:', resultados);
+        if (resultados) {
+            resultados.innerHTML = `
+                <div style="text-align:center; padding:40px; color: #FF6B6B;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:48px; display:block; margin-bottom:16px;"></i>
+                    <p>Error: No se encontraron los elementos del buscador</p>
+                    <p style="font-size:14px;">Verifica que el HTML tenga los IDs correctos</p>
+                </div>
+            `;
+        }
         return;
     }
 
-    console.log('✅ Elementos del buscador encontrados');
+    console.log('✅ Elementos encontrados correctamente');
 
     // ===== FUNCIÓN PARA BUSCAR =====
     function buscar() {
         const texto = input.value.trim();
         
         if (texto === '') {
-            alert('⚠️ Escribe algo para buscar');
+            App.showNotification('⚠️', 'Escribe algo para buscar');
             return;
         }
 
@@ -36,23 +49,31 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="text-align:center; padding:40px; color: var(--text-light);">
                 <i class="fas fa-spinner fa-spin" style="font-size:48px; display:block; margin-bottom:16px; color: var(--primary-color);"></i>
                 <p>Buscando "${texto}"...</p>
+                <p style="font-size:12px; margin-top:8px; color: var(--text-light);">📡 Usando API: ${MUSIC_API_BASE}</p>
             </div>
         `;
 
         // Llamar a la API
-        fetch(`${API_BASE}/search/ytsearch?q=${encodeURIComponent(texto)}`)
+        fetch(`${MUSIC_API_BASE}/search/ytsearch?q=${encodeURIComponent(texto)}`)
             .then(res => {
+                console.log(`📡 Respuesta HTTP: ${res.status}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
             })
             .then(data => {
                 console.log('📨 Datos recibidos:', data);
                 
-                if (!data.status || !data.data || data.data.length === 0) {
+                if (!data.status) {
+                    throw new Error('La API devolvió status: false');
+                }
+                
+                if (!data.data || data.data.length === 0) {
                     resultados.innerHTML = `
                         <div style="text-align:center; padding:40px; color: var(--text-light);">
                             <i class="fas fa-music" style="font-size:48px; display:block; margin-bottom:16px;"></i>
                             <p>No se encontraron resultados para "${texto}"</p>
+                            <p style="font-size:14px;">Intenta con otra palabra</p>
+                            <p style="font-size:12px; margin-top:8px;">💡 Ejemplos: TWICE, Bad Bunny, Bohemian Rhapsody</p>
                         </div>
                     `;
                     return;
@@ -60,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Mostrar resultados
                 mostrarResultados(data.data);
+                App.updateStats('musicSearches');
             })
             .catch(error => {
                 console.error('❌ Error:', error);
@@ -68,8 +90,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-exclamation-circle" style="font-size:48px; display:block; margin-bottom:16px; color: #FF6B6B;"></i>
                         <p>Error al buscar: ${error.message}</p>
                         <p style="font-size:14px;">Verifica tu conexión a internet</p>
+                        <p style="font-size:12px; margin-top:8px;">💡 Prueba con: TWICE, Bad Bunny, Bohemian Rhapsody</p>
                     </div>
                 `;
+                App.showNotification('❌', 'Error al buscar música');
             });
     }
 
@@ -125,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fab fa-youtube"></i> Ver
                     </button>
                     <button class="btn-secondary" style="padding:8px 16px; font-size:13px;" 
-                            onclick="copiarEnlace('${video.url}')">
+                            onclick="copiarEnlaceMusica('${video.url}')">
                         <i class="fas fa-copy"></i> Copiar
                     </button>
                 </div>
@@ -144,23 +168,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===== COPIAR ENLACE =====
-    window.copiarEnlace = function(url) {
+    window.copiarEnlaceMusica = function(url) {
         navigator.clipboard.writeText(url).then(() => {
-            alert('✅ Enlace copiado al portapapeles');
+            App.showNotification('✅', 'Enlace copiado al portapapeles');
         }).catch(() => {
-            alert('📋 URL: ' + url);
+            App.showNotification('📋', 'URL: ' + url);
         });
     };
 
     // ===== CONECTAR EVENTOS =====
-    // Botón "Buscar"
     boton.addEventListener('click', function(e) {
         e.preventDefault();
         console.log('🖱️ Click en buscar');
         buscar();
     });
 
-    // Tecla "Enter" en el input
     input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -170,4 +192,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     console.log('🎯 Buscador listo - Escribe algo y presiona Enter');
+    console.log('📡 API:', MUSIC_API_BASE);
 });
