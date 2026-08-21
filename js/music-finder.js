@@ -1,37 +1,58 @@
-// ===== BUSCADOR DE MÚSICA CON API REAL - CORREGIDO =====
+// ===== BUSCADOR DE MÚSICA CON API DELIRIUS.ONLINE =====
+// Desarrollado por Ander
+
+// 🔥 API CORRECTA PARA BÚSQUEDAS
+const API_BASE = 'https://api.delirius.online';
+
 document.addEventListener('DOMContentLoaded', function() {
     const musicSearch = document.getElementById('musicSearch');
     const searchBtn = document.getElementById('searchMusicBtn');
     const resultsDiv = document.getElementById('musicResults');
 
-    // Limpiar placeholder con ejemplos
-    musicSearch.placeholder = 'Ej: TWICE, Bad Bunny, Bohemian Rhapsody';
+    // Placeholder simple
+    musicSearch.placeholder = 'Buscar canciones, artistas o álbumes...';
 
     // Función para buscar en la API
     async function searchMusic(query) {
-        // Limpiar la búsqueda: eliminar comillas y espacios extras
-        let cleanQuery = query.trim()
-            .replace(/^["']|["']$/g, '') // Eliminar comillas al inicio/fin
-            .replace(/\s*,\s*/g, ' ') // Reemplazar comas por espacios
-            .trim();
+        // Solo eliminar espacios al inicio y final
+        let cleanQuery = query.trim();
 
         if (!cleanQuery || cleanQuery === '') {
-            App.showNotification('⚠️', 'Ingresa el nombre de una canción o artista');
+            App.showNotification('⚠️', 'Escribe algo para buscar');
             return;
         }
 
         // Mostrar loading
         resultsDiv.innerHTML = `
-            <div class="loading">
-                <i class="fas fa-spinner"></i>
-                <p>Buscando "${cleanQuery}"...</p>
+            <div class="loading" style="
+                background: var(--bg-card);
+                border-radius: var(--radius);
+                padding: 40px;
+                margin-top: 20px;
+                border: 2px dashed var(--border-color);
+            ">
+                <i class="fas fa-spinner" style="font-size: 40px; color: var(--primary-color);"></i>
+                <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Buscando "${cleanQuery}"...</p>
+                <p style="color: var(--text-light); font-size: 14px;">📡 Usando API: ${API_BASE}</p>
+                <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
+                     background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
+                    <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
+                         border-radius: 2px; animation: progressBar 2s ease-in-out infinite;"></div>
+                </div>
             </div>
         `;
 
         try {
-            // Llamar a la API
-            const url = `https://api.delirius.store/search/ytsearch?q=${encodeURIComponent(cleanQuery)}`;
+            // 🔥 LLAMAR A LA API CON LO QUE ESCRIBIÓ EL USUARIO
+            const url = `${API_BASE}/search/ytsearch?q=${encodeURIComponent(cleanQuery)}`;
+            console.log(`📡 Buscando en: ${url}`);
+            
             const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} - La API no respondió correctamente`);
+            }
+            
             const data = await response.json();
 
             if (!data.status || !data.data || data.data.length === 0) {
@@ -39,10 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="text-align:center; padding:40px; color: var(--text-light);">
                         <i class="fas fa-music" style="font-size:48px; display:block; margin-bottom:16px;"></i>
                         <p>No se encontraron resultados para "${cleanQuery}"</p>
-                        <p style="font-size:14px;">Sugerencias: Escribe solo el nombre del artista o canción</p>
-                        <p style="font-size:13px; margin-top:8px; color: var(--text-light);">
-                            💡 Ejemplos: <strong>TWICE</strong>, <strong>Bad Bunny</strong>, <strong>Bohemian Rhapsody</strong>
-                        </p>
+                        <p style="font-size:14px;">Intenta con otra palabra o artista</p>
                     </div>
                 `;
                 return;
@@ -55,11 +73,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error al buscar música:', error);
+            let errorMsg = error.message || 'Error desconocido';
+            if (errorMsg.includes('Failed to fetch')) {
+                errorMsg = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+            }
             resultsDiv.innerHTML = `
                 <div style="text-align:center; padding:40px; color: var(--text-light);">
                     <i class="fas fa-exclamation-circle" style="font-size:48px; display:block; margin-bottom:16px; color: #FF6B6B;"></i>
-                    <p>Error al conectar con la API</p>
-                    <p style="font-size:14px;">${error.message}</p>
+                    <p>Error al buscar música</p>
+                    <p style="font-size:14px;">${errorMsg}</p>
                 </div>
             `;
             App.showNotification('❌', 'Error al buscar música');
@@ -81,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 transition: var(--transition);
                 cursor: pointer;
                 flex-wrap: wrap;
-            ">
+            " onclick="window.open('${video.url}', '_blank')">
                 <!-- Número -->
                 <div style="
                     width: 32px;
@@ -120,11 +142,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Botones -->
                 <div style="display:flex; gap:8px; flex-shrink:0;">
                     <button class="btn-primary" style="padding:8px 16px; font-size:13px;" 
-                            onclick="window.open('${video.url}', '_blank')">
+                            onclick="event.stopPropagation(); window.open('${video.url}', '_blank')">
                         <i class="fab fa-youtube"></i> Ver
                     </button>
                     <button class="btn-secondary" style="padding:8px 16px; font-size:13px;" 
-                            onclick="copyLink('${video.url}')">
+                            onclick="event.stopPropagation(); copyLink('${video.url}')">
                         <i class="fas fa-copy"></i> Copiar
                     </button>
                 </div>
@@ -135,10 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Formatear vistas
     function formatViews(views) {
         if (!views) return '0';
-        if (views >= 1000000000) return (views / 1000000000).toFixed(1) + 'B';
-        if (views >= 1000000) return (views / 1000000).toFixed(1) + 'M';
-        if (views >= 1000) return (views / 1000).toFixed(1) + 'K';
-        return views.toString();
+        const num = parseInt(views);
+        if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
     }
 
     // Función para copiar link
@@ -161,10 +184,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Limpiar el input al hacer clic
+    // Limpiar el input al hacer clic (solo si tiene el texto de ejemplo)
     musicSearch.addEventListener('focus', function() {
-        if (this.value === 'TWICE, Bad Bunny, Bohemian Rhapsody') {
+        if (this.value === 'Buscar canciones, artistas o álbumes...') {
             this.value = '';
         }
     });
+
+    console.log('🎯 Buscador de música con API Delirius Online iniciado');
+    console.log('📡 API_BASE:', API_BASE);
 });
+
+// Añadir animación de progreso
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes progressBar {
+        0% { width: 0%; }
+        50% { width: 70%; }
+        100% { width: 100%; }
+    }
+`;
+document.head.appendChild(style);
