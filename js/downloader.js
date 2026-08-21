@@ -1,7 +1,7 @@
-// ===== DESCARGADOR CON API DELIRIUS.STORE =====
+// ===== DESCARGADOR CON API DELIRIUS.STORE (SOLO AUDIO) =====
 // Desarrollado por Ander
 
-// 🔥 API CORRECTA Y FUNCIONAL
+// 🔥 API CORRECTA - SOLO SOPORTA ytmp3 (AUDIO)
 const API_BASE = 'https://api.delirius.store';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,68 +12,68 @@ document.addEventListener('DOMContentLoaded', function() {
     const historyList = document.getElementById('historyList');
 
     let selectedPlatform = 'youtube';
-    let selectedFormat = 'mp4';
+    let selectedFormat = 'mp3'; // 🔥 SIEMPRE MP3 PORQUE LA API NO TIENE MP4
 
     // ===== ELEMENTOS DEL SELECTOR DE FORMATO =====
     const formatVideoBtn = document.getElementById('formatVideo');
     const formatAudioBtn = document.getElementById('formatAudio');
     const formatLabel = document.getElementById('formatLabel');
 
+    // ===== DESACTIVAR MP4 - NO ESTÁ DISPONIBLE =====
+    if (formatVideoBtn) {
+        formatVideoBtn.style.opacity = '0.5';
+        formatVideoBtn.style.cursor = 'not-allowed';
+        formatVideoBtn.title = '❌ MP4 no disponible, solo MP3';
+        formatVideoBtn.addEventListener('click', function() {
+            App.showNotification('⚠️', '❌ MP4 no está disponible. Solo MP3 funciona.');
+            // Cambiar a MP3 automáticamente
+            if (selectedFormat !== 'mp3') {
+                updateFormatSelection('mp3');
+            }
+        });
+    }
+
     // ===== FUNCIÓN PARA ACTUALIZAR BOTONES Y TEXTO =====
     function updateFormatSelection(format) {
         if (format === 'mp4') {
-            formatVideoBtn.style.borderColor = 'var(--primary-color)';
-            formatVideoBtn.style.background = 'var(--primary-color)';
-            formatVideoBtn.style.color = 'white';
-            formatVideoBtn.classList.add('active');
-            
-            formatAudioBtn.style.borderColor = 'var(--border-color)';
-            formatAudioBtn.style.background = 'var(--bg-card)';
-            formatAudioBtn.style.color = 'var(--text-primary)';
-            formatAudioBtn.classList.remove('active');
-
-            if (formatLabel) {
-                formatLabel.textContent = 'Formato seleccionado: MP4 Video';
-                formatLabel.style.color = 'var(--primary-color)';
-            }
-            
-            selectedFormat = 'mp4';
-            console.log('✅ Formato cambiado a: MP4');
-
-        } else if (format === 'mp3') {
-            formatAudioBtn.style.borderColor = 'var(--primary-color)';
-            formatAudioBtn.style.background = 'var(--primary-color)';
-            formatAudioBtn.style.color = 'white';
-            formatAudioBtn.classList.add('active');
-            
-            formatVideoBtn.style.borderColor = 'var(--border-color)';
-            formatVideoBtn.style.background = 'var(--bg-card)';
-            formatVideoBtn.style.color = 'var(--text-primary)';
-            formatVideoBtn.classList.remove('active');
-
-            if (formatLabel) {
-                formatLabel.textContent = 'Formato seleccionado: MP3 Audio';
-                formatLabel.style.color = 'var(--secondary-color)';
-            }
-            
-            selectedFormat = 'mp3';
-            console.log('✅ Formato cambiado a: MP3');
+            // Forzar a MP3 porque MP4 no funciona
+            format = 'mp3';
+            App.showNotification('⚠️', 'MP4 no disponible, cambiando a MP3');
         }
+        
+        // Siempre seleccionar MP3
+        formatAudioBtn.style.borderColor = 'var(--primary-color)';
+        formatAudioBtn.style.background = 'var(--primary-color)';
+        formatAudioBtn.style.color = 'white';
+        formatAudioBtn.classList.add('active');
+        
+        formatVideoBtn.style.borderColor = 'var(--border-color)';
+        formatVideoBtn.style.background = 'var(--bg-card)';
+        formatVideoBtn.style.color = 'var(--text-primary)';
+        formatVideoBtn.classList.remove('active');
+
+        if (formatLabel) {
+            formatLabel.textContent = 'Formato seleccionado: MP3 Audio (MP4 no disponible)';
+            formatLabel.style.color = 'var(--secondary-color)';
+        }
+        
+        selectedFormat = 'mp3';
+        console.log('✅ Formato forzado a: MP3 (MP4 no disponible)');
     }
 
     // ===== EVENT LISTENERS =====
     if (formatVideoBtn && formatAudioBtn) {
         formatVideoBtn.addEventListener('click', function() {
-            if (selectedFormat === 'mp4') return;
-            updateFormatSelection('mp4');
-        });
-
-        formatAudioBtn.addEventListener('click', function() {
-            if (selectedFormat === 'mp3') return;
+            App.showNotification('⚠️', '❌ MP4 no disponible. Usando MP3.');
             updateFormatSelection('mp3');
         });
 
-        updateFormatSelection('mp4');
+        formatAudioBtn.addEventListener('click', function() {
+            updateFormatSelection('mp3');
+        });
+
+        // Inicializar con MP3
+        updateFormatSelection('mp3');
     }
 
     // ===== SELECCIONAR PLATAFORMA =====
@@ -121,8 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== FUNCIÓN PRINCIPAL DE DESCARGA =====
     async function downloadVideo(url, platform) {
-        const formatLabelText = selectedFormat === 'mp4' ? 'MP4 Video' : 'MP3 Audio';
-        
         resultDiv.innerHTML = `
             <div class="loading" style="
                 background: var(--bg-card);
@@ -133,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ">
                 <i class="fas fa-spinner" style="font-size: 40px; color: var(--primary-color);"></i>
                 <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Procesando tu solicitud...</p>
-                <p style="color: var(--text-light); font-size: 14px;">Formato seleccionado: <strong style="color: var(--primary-color);">${formatLabelText}</strong></p>
+                <p style="color: var(--text-light); font-size: 14px;">Formato: <strong style="color: var(--primary-color);">MP3 Audio</strong></p>
                 <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
                      background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
                     <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
@@ -146,9 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                // 🔥 USAR LA API CORRECTA: api.delirius.store
-                const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
-                const apiUrl = `${API_BASE}/download/${endpoint}?url=${encodeURIComponent(url)}`;
+                // 🔥 SOLO USAR ytmp3 (AUDIO)
+                const apiUrl = `${API_BASE}/download/ytmp3?url=${encodeURIComponent(url)}`;
                 
                 console.log(`📡 Llamando a: ${apiUrl}`);
                 
@@ -161,22 +158,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json();
 
                 if (!data.status || !data.data) {
-                    throw new Error('No se pudo obtener el contenido del video');
+                    throw new Error('No se pudo obtener el audio del video');
                 }
 
                 const result = data.data;
                 response = {
                     success: true,
-                    title: result.title || 'Contenido de YouTube',
+                    title: result.title || 'Audio de YouTube',
                     author: result.author || 'Desconocido',
                     thumbnail: result.image || `https://i.ytimg.com/vi/${extractVideoId(url)}/hqdefault.jpg`,
                     downloadUrl: result.download,
                     platform: 'youtube',
                     views: result.views || '0',
                     likes: result.likes || '0',
-                    type: selectedFormat === 'mp4' ? 'video' : 'audio',
-                    format: selectedFormat,
-                    size: selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3'
+                    type: 'audio',
+                    format: 'mp3',
+                    size: 'Audio MP3'
                 };
             } else {
                 response = await simulateApiCall(url, platform);
@@ -218,14 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     facebook: '📱 Video de Facebook',
                     twitter: '🐦 Video de Twitter'
                 };
-                
-                const icons = {
-                    tiktok: 'fab fa-tiktok',
-                    youtube: 'fab fa-youtube',
-                    instagram: 'fab fa-instagram',
-                    facebook: 'fab fa-facebook',
-                    twitter: 'fab fa-twitter'
-                };
 
                 resolve({
                     success: true,
@@ -233,11 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     thumbnail: `https://picsum.photos/seed/${Date.now()}/400/300`,
                     downloadUrl: '#',
                     platform: platform,
-                    quality: '1080p',
-                    icon: icons[platform] || 'fas fa-video',
-                    size: '45.2 MB',
-                    format: 'video',
-                    type: 'video'
+                    type: 'audio',
+                    format: 'mp3',
+                    size: 'Audio MP3'
                 });
             }, 2000);
         });
@@ -254,11 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const color = platformColors[data.platform] || 'var(--primary-color)';
-        const isAudio = data.type === 'audio';
-        const formatDisplay = isAudio ? 'AUDIO MP3' : 'VIDEO MP4';
-        const formatLabelText = isAudio ? 'MP3 • 128kbps' : 'MP4 • HD';
-        const buttonText = isAudio ? 'Descargar MP3' : 'Descargar Video';
-        const iconClass = isAudio ? 'fa-music' : 'fa-video';
+        const isAudio = true; // Siempre audio
 
         resultDiv.innerHTML = `
             <div style="
@@ -285,8 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     align-items: center;
                     gap: 6px;
                 ">
-                    <i class="fas ${iconClass}"></i>
-                    ${formatDisplay}
+                    <i class="fas fa-music"></i>
+                    AUDIO MP3
                 </div>
 
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
@@ -305,10 +288,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div>
                         <h3 style="color: var(--text-primary); font-size: 20px;">
-                            ${isAudio ? '🎵 Audio listo para descargar' : '🎬 Video listo para descargar'}
+                            🎵 Audio listo para descargar
                         </h3>
                         <p style="color: var(--text-light); font-size: 14px;">
-                            Formato ${formatLabelText}
+                            Formato MP3 • 128kbps
                         </p>
                     </div>
                 </div>
@@ -331,16 +314,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             </p>
                             ${data.author ? `<p style="color: var(--text-secondary); font-size:14px;"><i class="fas fa-user"></i> ${data.author}</p>` : ''}
                             <p style="color: var(--text-secondary); font-size:14px; display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
-                                <i class="fas ${iconClass}" style="color: ${color};"></i>
-                                ${formatLabelText}
+                                <i class="fas fa-music" style="color: ${color};"></i>
+                                MP3 • 128kbps
                                 ${data.views ? `• 👁️ ${formatViews(data.views)}` : ''}
                                 ${data.likes ? `• ❤️ ${formatViews(data.likes)}` : ''}
                             </p>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-                            <button onclick="downloadFile('${data.downloadUrl}', '${isAudio ? 'audio' : 'video'}')" 
+                            <button onclick="downloadFile('${data.downloadUrl}', 'audio')" 
                                     class="btn-primary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
-                                <i class="fas fa-download"></i> ${buttonText}
+                                <i class="fas fa-download"></i> Descargar MP3
                             </button>
                             <button onclick="copyLink('${data.downloadUrl}')" 
                                     class="btn-secondary" style="padding:10px 24px; font-size:14px; flex:1; min-width:120px;">
@@ -394,11 +377,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        App.showNotification('📥', `Descargando ${type === 'audio' ? 'audio MP3' : 'video MP4'}...`);
+        App.showNotification('📥', 'Descargando audio MP3...');
         
         const link = document.createElement('a');
         link.href = url;
-        link.download = type === 'audio' ? `audio-${Date.now()}.mp3` : `video-${Date.now()}.mp4`;
+        link.download = `audio-${Date.now()}.mp3`;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
@@ -484,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ">
                     <i class="fas fa-history" style="font-size: 32px; display:block; margin-bottom: 8px; opacity: 0.3;"></i>
                     <p>No hay descargas aún</p>
-                    <p style="font-size: 13px;">¡Empieza descargando tu primer video o audio!</p>
+                    <p style="font-size: 13px;">¡Empieza descargando tu primer audio!</p>
                 </li>
             `;
             return;
@@ -545,8 +528,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== INICIALIZAR =====
     renderHistory();
-    console.log('🎯 Descargador con API Delirius Store iniciado');
+    console.log('🎯 Descargador con API Delirius Store (SOLO AUDIO)');
     console.log('📡 API_BASE:', API_BASE);
+    console.log('⚠️ MP4 no disponible, solo MP3');
 });
 
 // Actualizar estadísticas
