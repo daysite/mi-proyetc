@@ -1,15 +1,16 @@
 // ===== ASISTENTE IA CON API RIPLEAI =====
 // Desarrollado por Daniel
 
-// 🔥 API CORRECTA PARA CHAT
 const AI_API_BASE = 'https://api.delirius.online/ia/ripleai';
+
+// Historial de la conversación (contexto)
+let conversationHistory = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendChatBtn');
 
-    // Verificar elementos
     if (!chatMessages || !chatInput || !sendBtn) {
         console.error('❌ No se encontraron los elementos del chat');
         return;
@@ -31,6 +32,18 @@ Estoy aquí para ayudarte con lo que necesites:
 
     // Agregar mensaje de bienvenida
     addMessage('bot', welcomeMessage);
+    
+    // 🔥 Enviar el contexto inicial a la API para que "conozca" a RipleAI
+    const contextMessage = `Eres RipleAI, un asistente inteligente creado por Daniel. 
+    Tu personalidad es amigable, servicial y profesional. 
+    Respondes siempre en español, a menos que te pregunten en otro idioma.
+    Saludas de manera cálida y ofreces ayuda en todo momento.`;
+
+    // Guardar en el historial (para mantener contexto)
+    conversationHistory.push({
+        role: 'system',
+        content: contextMessage
+    });
 
     // ===== FUNCIÓN PARA ENVIAR MENSAJE =====
     window.sendMessage = function() {
@@ -44,11 +57,21 @@ Estoy aquí para ayudarte con lo que necesites:
         addMessage('user', message);
         chatInput.value = '';
 
+        // Guardar en historial
+        conversationHistory.push({
+            role: 'user',
+            content: message
+        });
+
         // Mostrar indicador de escritura
         const typingId = addTypingIndicator();
 
-        // Llamar a la API
-        const apiUrl = `${AI_API_BASE}?query=${encodeURIComponent(message)}`;
+        // 🔥 Enviar el historial completo a la API para mantener contexto
+        const contextQuery = conversationHistory.map(msg => 
+            `${msg.role === 'user' ? 'Usuario' : 'RipleAI'}: ${msg.content}`
+        ).join('\n');
+
+        const apiUrl = `${AI_API_BASE}?query=${encodeURIComponent(contextQuery)}`;
         console.log(`📡 Llamando a: ${apiUrl}`);
 
         fetch(apiUrl)
@@ -64,8 +87,17 @@ Estoy aquí para ayudarte con lo que necesites:
                     throw new Error('La API no devolvió una respuesta válida');
                 }
 
+                const botResponse = data.data.result;
+                
                 // Agregar respuesta del bot
-                addMessage('bot', data.data.result);
+                addMessage('bot', botResponse);
+                
+                // Guardar en historial
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: botResponse
+                });
+                
                 App.updateStats('aiRequests');
             })
             .catch(error => {
@@ -84,7 +116,6 @@ Estoy aquí para ayudarte con lo que necesites:
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}`;
         
-        // Formatear contenido (negritas, listas, etc.)
         let formattedContent = content;
         if (type === 'bot') {
             formattedContent = formatBotMessage(content);
@@ -110,20 +141,11 @@ Estoy aquí para ayudarte con lo que necesites:
     // ===== FORMATEAR MENSAJE DEL BOT =====
     function formatBotMessage(content) {
         let html = content;
-        
-        // Reemplazar saltos de línea
         html = html.replace(/\n/g, '<br>');
-        
-        // Negritas: **texto** -> <strong>texto</strong>
         html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // Código: `texto` -> <code>texto</code>
         html = html.replace(/`([^`]+)`/g, '<code style="background: var(--bg-input); padding: 2px 6px; border-radius: 4px; font-family: monospace;">$1</code>');
-        
-        // Listas: - item o * item -> <li>item</li>
         html = html.replace(/^[\s]*[-*]\s+(.+)$/gm, '<li>$1</li>');
         html = html.replace(/(<li>.*<\/li>)/s, '<ul style="margin: 8px 0; padding-left: 20px;">$1</ul>');
-        
         return html;
     }
 
@@ -170,7 +192,7 @@ Estoy aquí para ayudarte con lo que necesites:
 
     console.log('🤖 RipleAI - Asistente IA iniciado');
     console.log('📡 API:', AI_API_BASE);
-    console.log('👤 Creado por Daniel');
+    console.log('🧠 Contexto activado');
 });
 
 // ===== ESTILOS DEL CHAT =====
