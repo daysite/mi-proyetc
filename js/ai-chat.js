@@ -186,9 +186,9 @@ Estoy aquí para ayudarte con lo que necesites:
     console.log('👤 Personalidad: Creado por Daniel');
 });
 
-// Estilos adicionales para el chat
-const style = document.createElement('style');
-style.textContent = `
+// 🔥 CAMBIAR EL NOMBRE DE LA VARIABLE PARA EVITAR CONFLICTOS
+const chatStyles = document.createElement('style');
+chatStyles.textContent = `
     @keyframes bounce {
         0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
         30% { transform: translateY(-5px); opacity: 1; }
@@ -233,4 +233,4 @@ style.textContent = `
         margin: 4px 0;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(chatStyles);
