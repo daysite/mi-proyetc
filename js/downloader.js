@@ -1,5 +1,5 @@
 // ===== DESCARGADOR CON SCRAPER PROPIO =====
-// Desarrollado por Ander
+// Desarrollado por Daniel
 
 const API_BASE = 'https://embed.dlsrv.online';
 const YT_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
