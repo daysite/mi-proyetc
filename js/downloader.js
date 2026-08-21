@@ -1,7 +1,11 @@
-// ===== DESCARGADOR CON SCRAPER PROPIO =====
-// Desarrollado por Daniel
+// ===== DESCARGADOR CON PROXY CORS =====
+// Desarrollado por Ander
 
-const API_BASE = 'https://embed.dlsrv.online';
+// 🔥 CAMBIA ESTA URL SI LA API CAMBIA
+const API_BASE = 'https://corsproxy.io/?https://embed.dlsrv.online';
+// Si el proxy no funciona, prueba con: const API_BASE = 'https://api.delirius.store';
+// O vuelve a la original: const API_BASE = 'https://embed.dlsrv.online';
+
 const YT_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0';
 const VIDEO_QUALITIES = ['144', '240', '360', '480', '720', '1080'];
@@ -23,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const formatAudioBtn = document.getElementById('formatAudio');
     const formatLabel = document.getElementById('formatLabel');
 
-    // ===== FUNCIONES DEL SCRAPER =====
+    // ===== FUNCIONES DEL SCRAPER CON PROXY =====
     function extractVideoId(url) {
         const match = String(url || '').match(YT_REGEX);
         return match ? match[1] : null;
@@ -31,24 +35,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function apiHeaders(videoId) {
         return {
-            accept: '*/*',
+            'accept': '*/*',
             'accept-language': 'es-419,es;q=0.9,es-ES;q=0.8,en;q=0.7',
             'content-type': 'application/json',
-            origin: API_BASE,
-            referer: `${API_BASE}/v2/full?videoId=${videoId}`,
+            'origin': 'https://embed.dlsrv.online',
+            'referer': `https://embed.dlsrv.online/v2/full?videoId=${videoId}`,
             'user-agent': USER_AGENT
         };
     }
 
     async function getInfo(videoId) {
-        const res = await fetch(`${API_BASE}/api/info`, {
+        const url = `${API_BASE}/api/info`;
+        console.log('📡 Llamando a:', url);
+        
+        const res = await fetch(url, {
             method: 'POST',
             headers: apiHeaders(videoId),
             body: JSON.stringify({ videoId })
         });
-        if (!res.ok) throw new Error(`El servicio respondió HTTP ${res.status}`);
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (data.status !== 'info' || !data.info) throw new Error('No se pudo obtener la información del video');
+        if (data.status !== 'info' || !data.info) throw new Error('No se pudo obtener la información');
 
         const videos = [];
         for (const f of data.info.formats || []) {
@@ -70,14 +78,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function getDownload(videoId, format, quality) {
-        const res = await fetch(`${API_BASE}/api/download/${format}`, {
+        const url = `${API_BASE}/api/download/${format}`;
+        console.log('📡 Descargando desde:', url);
+        
+        const res = await fetch(url, {
             method: 'POST',
             headers: apiHeaders(videoId),
             body: JSON.stringify({ videoId, format, quality: String(quality) })
         });
-        if (!res.ok) throw new Error(`El servicio rechazó la descarga (HTTP ${res.status})`);
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (data.status !== 'tunnel' || !data.url) throw new Error('No se pudo generar el enlace de descarga');
+        if (data.status !== 'tunnel' || !data.url) throw new Error('No se pudo generar el enlace');
         return { url: data.url, filename: data.filename || '', duration: Number(data.duration) || 0 };
     }
 
@@ -113,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const sec = s % 60;
         return h > 0
             ? `${h}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-            : `${min}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+            : `${min}:${String(sec).padStart(2, '0')}`;
     }
 
     function formatSize(bytes) {
@@ -237,6 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="fas fa-spinner" style="font-size: 40px; color: var(--primary-color);"></i>
                 <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Procesando tu solicitud...</p>
                 <p style="color: var(--text-light); font-size: 14px;">Formato seleccionado: <strong style="color: var(--primary-color);">${formatLabelText}</strong></p>
+                <p style="color: var(--text-light); font-size: 12px; margin-top: 4px;">Usando API: ${API_BASE}</p>
                 <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
                      background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
                     <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
@@ -249,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                // 🔥 USAR EL SCRAPER PARA YOUTUBE
                 if (selectedFormat === 'mp4') {
                     response = await getVideo(url, DEFAULT_VIDEO_QUALITY);
                     response.type = 'video';
@@ -264,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 response.success = true;
                 response.platform = 'youtube';
             } else {
-                // Para otras plataformas
                 response = await simulateApiCall(url, platform);
             }
 
@@ -278,7 +289,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            showError('❌ ' + (error.message || 'Error al procesar la solicitud'));
+            let errorMsg = error.message || 'Error desconocido';
+            if (errorMsg.includes('Failed to fetch')) {
+                errorMsg = 'No se pudo conectar con el servidor. Verifica tu conexión a internet o la disponibilidad de la API.';
+            }
+            showError('❌ ' + errorMsg);
         }
     }
 
@@ -383,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${isAudio ? '🎵 Audio listo para descargar' : '🎬 Video listo para descargar'}
                         </h3>
                         <p style="color: var(--text-light); font-size: 14px;">
-                            Formato ${formatLabelText} • ${data.duration ? '⏱️ ' + formatDuration(data.duration) : ''}
+                            Formato ${formatLabelText} ${data.duration ? '• ⏱️ ' + formatDuration(data.duration) : ''}
                         </p>
                     </div>
                 </div>
@@ -443,25 +458,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-    }
-
-    function formatDuration(seconds) {
-        const s = Math.max(0, Math.floor(seconds || 0));
-        const h = Math.floor(s / 3600);
-        const min = Math.floor((s % 3600) / 60);
-        const sec = s % 60;
-        return h > 0
-            ? `${h}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-            : `${min}:${String(sec).padStart(2, '0')}`;
-    }
-
-    function formatViews(views) {
-        if (!views) return '0';
-        const num = parseInt(views);
-        if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-        return num.toString();
     }
 
     // ===== FUNCIONES GLOBALES =====
@@ -534,6 +530,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div>
                     <p style="color: #FF6B6B; font-weight:700; font-size:16px;">¡Ups! Algo salió mal</p>
                     <p style="color: var(--text-secondary);">${message}</p>
+                    <p style="color: var(--text-light); font-size:12px; margin-top:4px;">
+                        💡 Verifica tu conexión a internet o prueba con otro enlace.
+                    </p>
                 </div>
             </div>
         `;
@@ -627,7 +626,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== INICIALIZAR =====
     renderHistory();
-    console.log('🎯 Descargador con scraper propio iniciado');
+    console.log('🎯 Descargador con proxy CORS iniciado');
+    console.log('📡 API_BASE:', API_BASE);
 });
 
 // Actualizar estadísticas
