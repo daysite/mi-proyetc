@@ -4,23 +4,40 @@
 // 🔥 API CORRECTA PARA BÚSQUEDAS
 const API_BASE = 'https://api.delirius.online';
 
+// Variable global para acceder desde la consola si es necesario
+let musicSearchInstance = null;
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Obtener elementos
     const musicSearch = document.getElementById('musicSearch');
     const searchBtn = document.getElementById('searchMusicBtn');
     const resultsDiv = document.getElementById('musicResults');
 
-    // Placeholder simple
+    // Verificar que los elementos existen
+    if (!musicSearch || !searchBtn || !resultsDiv) {
+        console.error('❌ No se encontraron los elementos del buscador');
+        return;
+    }
+
+    // Placeholder
     musicSearch.placeholder = 'Buscar canciones, artistas o álbumes...';
 
-    // Función para buscar en la API
-    async function searchMusic(query) {
-        // Solo eliminar espacios al inicio y final
-        let cleanQuery = query.trim();
+    // ===== FUNCIÓN PRINCIPAL DE BÚSQUEDA =====
+    window.searchMusic = async function(query) {
+        // Si no se pasa query, usar el valor del input
+        if (!query) {
+            query = musicSearch.value;
+        }
+        
+        // Limpiar espacios
+        const cleanQuery = query.trim();
 
         if (!cleanQuery || cleanQuery === '') {
             App.showNotification('⚠️', 'Escribe algo para buscar');
             return;
         }
+
+        console.log(`🔍 Buscando: "${cleanQuery}"`);
 
         // Mostrar loading
         resultsDiv.innerHTML = `
@@ -43,17 +60,18 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         try {
-            // 🔥 LLAMAR A LA API CON LO QUE ESCRIBIÓ EL USUARIO
+            // Llamar a la API
             const url = `${API_BASE}/search/ytsearch?q=${encodeURIComponent(cleanQuery)}`;
-            console.log(`📡 Buscando en: ${url}`);
+            console.log(`📡 Llamando a: ${url}`);
             
             const response = await fetch(url);
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status} - La API no respondió correctamente`);
+                throw new Error(`HTTP ${response.status}`);
             }
             
             const data = await response.json();
+            console.log('📨 Respuesta:', data);
 
             if (!data.status || !data.data || data.data.length === 0) {
                 resultsDiv.innerHTML = `
@@ -72,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
             App.showNotification('🎵', `Encontrados ${data.data.length} resultados`);
 
         } catch (error) {
-            console.error('Error al buscar música:', error);
+            console.error('❌ Error:', error);
             let errorMsg = error.message || 'Error desconocido';
             if (errorMsg.includes('Failed to fetch')) {
                 errorMsg = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
@@ -82,13 +100,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-exclamation-circle" style="font-size:48px; display:block; margin-bottom:16px; color: #FF6B6B;"></i>
                     <p>Error al buscar música</p>
                     <p style="font-size:14px;">${errorMsg}</p>
+                    <p style="font-size:12px; margin-top:8px;">💡 Prueba con: TWICE, Bad Bunny, Bohemian Rhapsody</p>
                 </div>
             `;
             App.showNotification('❌', 'Error al buscar música');
         }
-    }
+    };
 
-    // Función para renderizar resultados
+    // ===== FUNCIÓN PARA RENDERIZAR RESULTADOS =====
     function renderResults(videos) {
         resultsDiv.innerHTML = videos.map((video, index) => `
             <div style="
@@ -104,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 cursor: pointer;
                 flex-wrap: wrap;
             " onclick="window.open('${video.url}', '_blank')">
-                <!-- Número -->
                 <div style="
                     width: 32px;
                     height: 32px;
@@ -121,11 +139,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${index + 1}
                 </div>
 
-                <!-- Mini imagen -->
                 <img src="${video.thumbnail || video.image}" alt="${video.title}" 
                      style="width:80px; height:60px; border-radius:8px; object-fit:cover; flex-shrink:0;">
 
-                <!-- Info -->
                 <div style="flex:1; min-width:150px;">
                     <h4 style="color: var(--text-primary); font-size:15px; margin-bottom:4px; 
                                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -139,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
-                <!-- Botones -->
                 <div style="display:flex; gap:8px; flex-shrink:0;">
                     <button class="btn-primary" style="padding:8px 16px; font-size:13px;" 
                             onclick="event.stopPropagation(); window.open('${video.url}', '_blank')">
@@ -154,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
     }
 
-    // Formatear vistas
+    // ===== FORMATO DE VISTAS =====
     function formatViews(views) {
         if (!views) return '0';
         const num = parseInt(views);
@@ -164,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return num.toString();
     }
 
-    // Función para copiar link
+    // ===== COPIAR LINK =====
     window.copyLink = function(url) {
         navigator.clipboard.writeText(url).then(() => {
             App.showNotification('✅', 'Enlace copiado al portapapeles');
@@ -173,26 +188,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    // Event listeners
-    searchBtn.addEventListener('click', function() {
-        searchMusic(musicSearch.value);
+    // ===== EVENTOS =====
+    // Botón buscar
+    searchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🖱️ Click en buscar');
+        window.searchMusic();
     });
 
+    // Enter en el input
     musicSearch.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            searchMusic(musicSearch.value);
+            e.preventDefault();
+            console.log('⌨️ Enter presionado');
+            window.searchMusic();
         }
     });
 
-    // Limpiar el input al hacer clic (solo si tiene el texto de ejemplo)
+    // Limpiar placeholder al hacer foco
     musicSearch.addEventListener('focus', function() {
         if (this.value === 'Buscar canciones, artistas o álbumes...') {
             this.value = '';
         }
     });
 
-    console.log('🎯 Buscador de música con API Delirius Online iniciado');
+    // Log de inicio
+    console.log('🎯 Buscador de música iniciado');
     console.log('📡 API_BASE:', API_BASE);
+    console.log('💡 Escribe algo y presiona Enter o haz clic en Buscar');
 });
 
 // Añadir animación de progreso
