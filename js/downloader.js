@@ -1,4 +1,13 @@
-// ===== DESCARGADOR DE VIDEOS Y AUDIO CON SELECTOR DE FORMATO REAL =====
+// ===== DESCARGADOR CON SCRAPER PROPIO =====
+// Desarrollado por Ander
+
+const API_BASE = 'https://embed.dlsrv.online';
+const YT_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0';
+const VIDEO_QUALITIES = ['144', '240', '360', '480', '720', '1080'];
+const DEFAULT_VIDEO_QUALITY = '1080';
+const AUDIO_QUALITY = '128';
+
 document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.getElementById('downloadBtn');
     const videoUrlInput = document.getElementById('videoUrl');
@@ -7,14 +16,113 @@ document.addEventListener('DOMContentLoaded', function() {
     const historyList = document.getElementById('historyList');
 
     let selectedPlatform = 'youtube';
-    let selectedFormat = 'mp4'; // Por defecto: video
+    let selectedFormat = 'mp4';
 
     // ===== ELEMENTOS DEL SELECTOR DE FORMATO =====
     const formatVideoBtn = document.getElementById('formatVideo');
     const formatAudioBtn = document.getElementById('formatAudio');
     const formatLabel = document.getElementById('formatLabel');
 
-    // ===== FUNCIÓN PARA ACTUALIZAR BOTONES Y TEXTO =====
+    // ===== FUNCIONES DEL SCRAPER =====
+    function extractVideoId(url) {
+        const match = String(url || '').match(YT_REGEX);
+        return match ? match[1] : null;
+    }
+
+    function apiHeaders(videoId) {
+        return {
+            accept: '*/*',
+            'accept-language': 'es-419,es;q=0.9,es-ES;q=0.8,en;q=0.7',
+            'content-type': 'application/json',
+            origin: API_BASE,
+            referer: `${API_BASE}/v2/full?videoId=${videoId}`,
+            'user-agent': USER_AGENT
+        };
+    }
+
+    async function getInfo(videoId) {
+        const res = await fetch(`${API_BASE}/api/info`, {
+            method: 'POST',
+            headers: apiHeaders(videoId),
+            body: JSON.stringify({ videoId })
+        });
+        if (!res.ok) throw new Error(`El servicio respondió HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.status !== 'info' || !data.info) throw new Error('No se pudo obtener la información del video');
+
+        const videos = [];
+        for (const f of data.info.formats || []) {
+            if (f.type === 'video') {
+                const q = String(f.quality).replace(/p$/i, '');
+                videos.push({ quality: q, size: Number(f.fileSize) || 0 });
+            }
+        }
+        videos.sort((a, b) => Number(b.quality) - Number(a.quality));
+
+        return {
+            videoId,
+            title: data.info.title || 'YouTube',
+            author: data.info.author || '',
+            duration: Number(data.info.duration) || 0,
+            thumbnail: data.info.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            videos
+        };
+    }
+
+    async function getDownload(videoId, format, quality) {
+        const res = await fetch(`${API_BASE}/api/download/${format}`, {
+            method: 'POST',
+            headers: apiHeaders(videoId),
+            body: JSON.stringify({ videoId, format, quality: String(quality) })
+        });
+        if (!res.ok) throw new Error(`El servicio rechazó la descarga (HTTP ${res.status})`);
+        const data = await res.json();
+        if (data.status !== 'tunnel' || !data.url) throw new Error('No se pudo generar el enlace de descarga');
+        return { url: data.url, filename: data.filename || '', duration: Number(data.duration) || 0 };
+    }
+
+    async function getVideo(url, quality = DEFAULT_VIDEO_QUALITY) {
+        const videoId = extractVideoId(url);
+        if (!videoId) throw new Error('Enlace de YouTube inválido');
+
+        const info = await getInfo(videoId);
+        const available = info.videos.map(v => v.quality);
+        let q = VIDEO_QUALITIES.includes(String(quality).replace(/p$/i, '')) ? String(quality).replace(/p$/i, '') : DEFAULT_VIDEO_QUALITY;
+        if (available.length && !available.includes(q)) {
+            q = available.find(a => Number(a) <= Number(q)) || available[available.length - 1];
+        }
+
+        const tunnel = await getDownload(videoId, 'mp4', q);
+        const size = info.videos.find(v => v.quality === q)?.size || 0;
+        return { ...info, quality: q, size, downloadUrl: tunnel.url, filename: tunnel.filename };
+    }
+
+    async function getAudio(url) {
+        const videoId = extractVideoId(url);
+        if (!videoId) throw new Error('Enlace de YouTube inválido');
+
+        const info = await getInfo(videoId);
+        const tunnel = await getDownload(videoId, 'mp3', AUDIO_QUALITY);
+        return { ...info, bitrate: AUDIO_QUALITY, downloadUrl: tunnel.url, filename: tunnel.filename };
+    }
+
+    function formatDuration(seconds) {
+        const s = Math.max(0, Math.floor(seconds || 0));
+        const h = Math.floor(s / 3600);
+        const min = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return h > 0
+            ? `${h}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+            : `${min}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function formatSize(bytes) {
+        if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(2)} GB`;
+        if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+        return `${Math.ceil(bytes / 1024)} KB`;
+    }
+
+    // ===== ACTUALIZAR FORMATO =====
     function updateFormatSelection(format) {
         if (format === 'mp4') {
             formatVideoBtn.style.borderColor = 'var(--primary-color)';
@@ -33,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             selectedFormat = 'mp4';
-            App.showNotification('📹', 'Formato seleccionado: MP4 Video');
             console.log('✅ Formato cambiado a: MP4');
 
         } else if (format === 'mp3') {
@@ -53,7 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             selectedFormat = 'mp3';
-            App.showNotification('🎵', 'Formato seleccionado: MP3 Audio');
             console.log('✅ Formato cambiado a: MP3');
         }
     }
@@ -73,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateFormatSelection('mp4');
     }
 
-    // Seleccionar plataforma
+    // ===== SELECCIONAR PLATAFORMA =====
     platformBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             platformBtns.forEach(b => b.classList.remove('active'));
@@ -96,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Descargar
+    // ===== DESCARGAR =====
     downloadBtn.addEventListener('click', function() {
         const url = videoUrlInput.value.trim();
         if (!url) {
@@ -110,7 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadVideo(url, selectedPlatform);
     });
 
-    // Enter para descargar
     videoUrlInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             downloadBtn.click();
@@ -144,17 +249,26 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                response = await downloadFromDelirius(url);
+                // 🔥 USAR EL SCRAPER PARA YOUTUBE
+                if (selectedFormat === 'mp4') {
+                    response = await getVideo(url, DEFAULT_VIDEO_QUALITY);
+                    response.type = 'video';
+                    response.format = 'mp4';
+                    response.size = formatSize(response.size);
+                } else {
+                    response = await getAudio(url);
+                    response.type = 'audio';
+                    response.format = 'mp3';
+                    response.bitrate = AUDIO_QUALITY;
+                }
+                response.success = true;
+                response.platform = 'youtube';
             } else {
+                // Para otras plataformas
                 response = await simulateApiCall(url, platform);
             }
 
             if (response.success) {
-                // 🔥 FORZAR EL FORMATO SELECCIONADO EN LA RESPUESTA
-                response.type = selectedFormat === 'mp4' ? 'video' : 'audio';
-                response.format = selectedFormat;
-                response.size = selectedFormat === 'mp4' ? 'Video MP4' : 'Audio MP3';
-                
                 showResult(response);
                 saveToHistory(response.title, platform);
                 App.updateStats('downloads');
@@ -163,67 +277,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError('❌ ' + (response.message || 'Error al procesar la solicitud'));
             }
         } catch (error) {
-            showError('❌ Error de conexión. Intenta de nuevo más tarde.');
-            console.error('Download error:', error);
-        }
-    }
-
-    // ===== API DE DELIRIUS =====
-    async function downloadFromDelirius(url) {
-        try {
-            const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
-            const apiUrl = `https://api.delirius.store/download/${endpoint}?url=${encodeURIComponent(url)}`;
-            
-            console.log(`📡 Llamando a la API: ${apiUrl}`);
-            
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-
-            if (!data.status || !data.data) {
-                const fallbackEndpoint = selectedFormat === 'mp4' ? 'ytmp3' : 'ytmp4';
-                const fallbackUrl = `https://api.delirius.store/download/${fallbackEndpoint}?url=${encodeURIComponent(url)}`;
-                
-                const fallbackResponse = await fetch(fallbackUrl);
-                const fallbackData = await fallbackResponse.json();
-                
-                if (!fallbackData.status || !fallbackData.data) {
-                    return {
-                        success: false,
-                        message: 'No se pudo obtener el contenido'
-                    };
-                }
-                
-                const result = fallbackData.data;
-                return {
-                    success: true,
-                    title: result.title || 'Contenido de YouTube',
-                    author: result.author || 'Desconocido',
-                    thumbnail: result.image || 'https://picsum.photos/seed/fallback/400/300',
-                    downloadUrl: result.download,
-                    platform: 'youtube',
-                    views: result.views || '0',
-                    likes: result.likes || '0'
-                };
-            }
-
-            const result = data.data;
-            return {
-                success: true,
-                title: result.title || 'Contenido de YouTube',
-                author: result.author || 'Desconocido',
-                thumbnail: result.image || 'https://picsum.photos/seed/success/400/300',
-                downloadUrl: result.download,
-                platform: 'youtube',
-                views: result.views || '0',
-                likes: result.likes || '0'
-            };
-
-        } catch (error) {
-            console.error('Error en Delirius API:', error);
-            return {
-                success: false,
-                message: error.message || 'Error al conectar con la API'
-            };
+            console.error('Error:', error);
+            showError('❌ ' + (error.message || 'Error al procesar la solicitud'));
         }
     }
 
@@ -255,13 +310,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     platform: platform,
                     quality: '1080p',
                     icon: icons[platform] || 'fas fa-video',
-                    size: '45.2 MB'
+                    size: '45.2 MB',
+                    format: 'video',
+                    type: 'video'
                 });
             }, 2000);
         });
     }
 
-    // ===== MOSTRAR RESULTADO - BADGE FORZADO =====
+    // ===== MOSTRAR RESULTADO =====
     function showResult(data) {
         const platformColors = {
             tiktok: '#FF0050',
@@ -272,10 +329,9 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const color = platformColors[data.platform] || 'var(--primary-color)';
-        // 🔥 USAR EL FORMATO SELECCIONADO, NO EL DE LA API
-        const isAudio = selectedFormat === 'mp3';
+        const isAudio = data.type === 'audio';
         const formatDisplay = isAudio ? 'AUDIO MP3' : 'VIDEO MP4';
-        const formatLabelText = isAudio ? 'MP3 • 128kbps' : 'MP4 • HD';
+        const formatLabelText = isAudio ? `MP3 • ${data.bitrate || '128'}kbps` : `MP4 • ${data.quality || 'HD'}`;
         const buttonText = isAudio ? 'Descargar MP3' : 'Descargar Video';
         const iconClass = isAudio ? 'fa-music' : 'fa-video';
 
@@ -290,7 +346,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 position: relative;
                 overflow: hidden;
             ">
-                <!-- 🔥 BADGE FORZADO AL FORMATO SELECCIONADO -->
                 <div style="
                     position: absolute;
                     top: 0;
@@ -328,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${isAudio ? '🎵 Audio listo para descargar' : '🎬 Video listo para descargar'}
                         </h3>
                         <p style="color: var(--text-light); font-size: 14px;">
-                            Formato ${formatLabelText}
+                            Formato ${formatLabelText} • ${data.duration ? '⏱️ ' + formatDuration(data.duration) : ''}
                         </p>
                     </div>
                 </div>
@@ -350,10 +405,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${data.title}
                             </p>
                             ${data.author ? `<p style="color: var(--text-secondary); font-size:14px;"><i class="fas fa-user"></i> ${data.author}</p>` : ''}
-                            <p style="color: var(--text-secondary); font-size:14px; display:flex; align-items:center; gap:8px; margin-top:4px;">
+                            <p style="color: var(--text-secondary); font-size:14px; display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                                 <i class="fas ${iconClass}" style="color: ${color};"></i>
                                 ${formatLabelText}
-                                ${data.views ? `• 👁️ ${formatViews(data.views)}` : ''}
+                                ${data.size ? `• 📦 ${data.size}` : ''}
+                                ${data.duration ? `• ⏱️ ${formatDuration(data.duration)}` : ''}
                             </p>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
@@ -389,7 +445,16 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // Formatear vistas
+    function formatDuration(seconds) {
+        const s = Math.max(0, Math.floor(seconds || 0));
+        const h = Math.floor(s / 3600);
+        const min = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return h > 0
+            ? `${h}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+            : `${min}:${String(sec).padStart(2, '0')}`;
+    }
+
     function formatViews(views) {
         if (!views) return '0';
         const num = parseInt(views);
@@ -399,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return num.toString();
     }
 
-    // Copiar enlace
+    // ===== FUNCIONES GLOBALES =====
     window.copyLink = function(url) {
         navigator.clipboard.writeText(url).then(() => {
             App.showNotification('✅', 'Enlace copiado al portapapeles');
@@ -408,7 +473,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    // Mostrar error
+    window.downloadFile = function(url, type) {
+        if (!url || url === '#') {
+            App.showNotification('⚠️', 'Enlace de descarga no disponible');
+            return;
+        }
+
+        App.showNotification('📥', `Descargando ${type === 'audio' ? 'audio MP3' : 'video MP4'}...`);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = type === 'audio' ? `audio-${Date.now()}.mp3` : `video-${Date.now()}.mp4`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    App.showNotification('✅', '¡Descarga completada!');
+                }
+                progressBar.style.width = progress + '%';
+            }, 300);
+        }
+    };
+
     function showError(message) {
         resultDiv.innerHTML = `
             <div style="
@@ -444,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // Guardar historial
+    // ===== HISTORIAL =====
     function saveToHistory(title, platform) {
         let history = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
         history.unshift({
@@ -457,7 +552,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHistory();
     }
 
-    // Renderizar historial
     function renderHistory() {
         const history = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
         if (history.length === 0) {
@@ -531,42 +625,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // ===== FUNCIÓN GLOBAL PARA DESCARGAR ARCHIVO =====
-    window.downloadFile = function(url, type) {
-        if (!url || url === '#') {
-            App.showNotification('⚠️', 'Enlace de descarga no disponible');
-            return;
-        }
-
-        App.showNotification('📥', `Descargando ${type === 'audio' ? 'audio MP3' : 'video MP4'}...`);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = type === 'audio' ? `audio-${Date.now()}.mp3` : `video-${Date.now()}.mp4`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        const progressBar = document.getElementById('progressBar');
-        if (progressBar) {
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress > 100) {
-                    progress = 100;
-                    clearInterval(interval);
-                    App.showNotification('✅', '¡Descarga completada!');
-                }
-                progressBar.style.width = progress + '%';
-            }, 300);
-        }
-    };
-
-    // Inicializar historial
+    // ===== INICIALIZAR =====
     renderHistory();
-    
-    console.log(`🎯 Formato inicial: ${selectedFormat.toUpperCase()}`);
+    console.log('🎯 Descargador con scraper propio iniciado');
 });
 
 // Actualizar estadísticas
