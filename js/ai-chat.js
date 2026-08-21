@@ -4,13 +4,6 @@
 // 🔥 API CORRECTA PARA CHAT
 const AI_API_BASE = 'https://api.delirius.online/ia/ripleai';
 
-// Personalidad del asistente
-const AI_PERSONALITY = `Eres una inteligencia artificial llamada "RipleAI" creada por Daniel. 
-Tu personalidad es amigable, servicial y profesional. Te presentas como: 
-"👋 ¡Hola! Soy RipleAI, tu asistente inteligente creado por Daniel. Estoy aquí para ayudarte con lo que necesites, desde responder preguntas hasta generar ideas o resolver problemas. ¿En qué puedo asistirte hoy?".
-Siempre respondes en español, a menos que te pregunten en otro idioma. 
-Eres extremadamente útil, positivo y das respuestas detalladas pero concisas.`;
-
 document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
@@ -22,7 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Mensaje de bienvenida con personalidad
+    // LIMPIAR mensajes existentes
+    chatMessages.innerHTML = '';
+
+    // ===== MENSAJE DE BIENVENIDA DE RIPLEAI =====
     const welcomeMessage = `👋 ¡Hola! Soy **RipleAI**, tu asistente inteligente creado por **Daniel**. 
 
 Estoy aquí para ayudarte con lo que necesites:
@@ -159,15 +155,6 @@ Estoy aquí para ayudarte con lo que necesites:
         if (element) element.remove();
     }
 
-    // ===== COMANDOS RÁPIDOS =====
-    window.insertCommand = function(command) {
-        chatInput.value = command;
-        chatInput.focus();
-        // Colocar cursor al final
-        const length = chatInput.value.length;
-        chatInput.setSelectionRange(length, length);
-    };
-
     // ===== EVENTOS =====
     sendBtn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -181,12 +168,12 @@ Estoy aquí para ayudarte con lo que necesites:
         }
     });
 
-    console.log('🤖 Asistente IA con API RipleyAI iniciado');
+    console.log('🤖 RipleAI - Asistente IA iniciado');
     console.log('📡 API:', AI_API_BASE);
-    console.log('👤 Personalidad: Creado por Daniel');
+    console.log('👤 Creado por Daniel');
 });
 
-// 🔥 CAMBIAR EL NOMBRE DE LA VARIABLE PARA EVITAR CONFLICTOS
+// ===== ESTILOS DEL CHAT =====
 const chatStyles = document.createElement('style');
 chatStyles.textContent = `
     @keyframes bounce {
