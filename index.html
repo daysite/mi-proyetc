@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <!-- ===== PESTAÑAS DE NAVEGACIÓN - ACTUALIZADAS ===== -->
+    <!-- ===== PESTAÑAS DE NAVEGACIÓN ===== -->
     <nav class="tabs-nav">
         <button class="tab-btn active" data-tab="downloader">
             <i class="fas fa-download"></i>
@@ -42,9 +42,9 @@
             <i class="fas fa-robot"></i>
             <span>IA Chat</span>
         </button>
-        <button class="tab-btn" data-tab="art-generator">
-            <i class="fas fa-palette"></i>
-            <span>Arte IA</span>
+        <button class="tab-btn" data-tab="pokemon">
+            <i class="fas fa-paw"></i>
+            <span>Pokémon</span>
         </button>
         <button class="tab-btn" data-tab="qr-generator">
             <i class="fas fa-qrcode"></i>
@@ -115,7 +115,7 @@
                     </button>
                 </div>
 
-                <!-- ===== SELECTOR DE FORMATO CON TEXTO DINÁMICO ===== -->
+                <!-- Selector de formato -->
                 <div class="format-selector" style="
                     display: flex;
                     gap: 12px;
@@ -160,7 +160,6 @@
                         <i class="fas fa-music"></i> MP3
                     </button>
                     
-                    <!-- 🔥 TEXTO DINÁMICO DEL FORMATO SELECCIONADO -->
                     <span id="formatLabel" style="
                         margin-left: auto;
                         font-size: 14px;
@@ -199,19 +198,7 @@
             
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages">
-                    <div class="message bot">
-                        <div class="message-avatar"><i class="fas fa-robot"></i></div>
-                        <div class="message-content">
-                            <p>👋 ¡Hola! Soy tu asistente IA. Puedo ayudarte con:</p>
-                            <ul>
-                                <li><strong>/imagen</strong> [descripción] - Generar imágenes</li>
-                                <li><strong>/resumir</strong> [texto] - Resumir textos largos</li>
-                                <li><strong>/traducir</strong> [texto] a [idioma] - Traducir</li>
-                                <li><strong>/idea</strong> [tema] - Generar ideas creativas</li>
-                                <li><strong>/ayuda</strong> - Ver todos los comandos</li>
-                            </ul>
-                        </div>
-                    </div>
+                    <!-- Mensajes dinámicos -->
                 </div>
                 <div class="chat-input-group">
                     <input type="text" id="chatInput" placeholder="Escribe tu mensaje...">
@@ -219,46 +206,29 @@
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
-                <div class="quick-commands">
-                    <button onclick="insertCommand('/imagen ')"><i class="fas fa-image"></i> Generar imagen</button>
-                    <button onclick="insertCommand('/resumir ')"><i class="fas fa-file-alt"></i> Resumir</button>
-                    <button onclick="insertCommand('/traducir ')"><i class="fas fa-language"></i> Traducir</button>
-                    <button onclick="insertCommand('/idea ')"><i class="fas fa-lightbulb"></i> Ideas</button>
-                    <button onclick="insertCommand('/ayuda')"><i class="fas fa-question-circle"></i> Ayuda</button>
-                </div>
             </div>
         </section>
 
-        <!-- ==================== PESTAÑA 3: ARTE IA ==================== -->
-        <section id="art-generator" class="tab-panel">
+        <!-- ==================== PESTAÑA 3: POKÉMON (REEMPLAZA ARTE IA) ==================== -->
+        <section id="pokemon" class="tab-panel">
             <div class="panel-header">
-                <h2><i class="fas fa-palette"></i> Generador de Arte IA</h2>
-                <p>Crea imágenes increíbles con inteligencia artificial</p>
+                <h2><i class="fas fa-paw"></i> Buscador de Pokémon</h2>
+                <p>Encuentra información de tu Pokémon favorito</p>
             </div>
             
-            <div class="art-container">
-                <div class="art-input-group">
-                    <textarea id="artPrompt" placeholder="Describe la imagen que quieres crear..."></textarea>
-                    <div class="art-options">
-                        <select id="artStyle">
-                            <option value="realistic">🎨 Realista</option>
-                            <option value="anime">🌸 Anime</option>
-                            <option value="cartoon">✏️ Dibujo animado</option>
-                            <option value="oil-painting">🖼️ Óleo</option>
-                            <option value="watercolor">💧 Acuarela</option>
-                            <option value="cyberpunk">🌃 Cyberpunk</option>
-                            <option value="fantasy">🐉 Fantasía</option>
-                        </select>
-                        <button id="generateArtBtn" class="btn-primary">
-                            <i class="fas fa-wand-magic-sparkles"></i> Generar
-                        </button>
-                    </div>
+            <div class="pokemon-container">
+                <div class="pokemon-search" style="display:flex; gap:12px; margin-bottom:20px;">
+                    <input type="text" id="pokemonSearch" placeholder="Ej: Pikachu, Charizard, Mewtwo..." style="flex:1;">
+                    <button id="searchPokemonBtn" class="btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
                 </div>
-                <div id="artResult" class="art-result">
-                    <div class="placeholder-art">
-                        <i class="fas fa-image"></i>
-                        <p>Tu imagen aparecerá aquí</p>
-                        <small>Describe lo que quieres crear</small>
+                <div id="pokemonResult" class="pokemon-result">
+                    <div class="placeholder-pokemon" style="text-align:center; padding:60px 20px; color: var(--text-light);">
+                        <i class="fas fa-paw" style="font-size:64px; display:block; margin-bottom:16px; opacity:0.3;"></i>
+                        <p style="font-size:18px; font-weight:600;">¡Busca un Pokémon!</p>
+                        <p style="font-size:14px;">Escribe el nombre de un Pokémon y presiona buscar</p>
+                        <p style="font-size:13px; margin-top:8px;">💡 Ejemplos: <strong>Pikachu</strong>, <strong>Charizard</strong>, <strong>Mewtwo</strong>, <strong>Eevee</strong></p>
                     </div>
                 </div>
             </div>
@@ -315,7 +285,7 @@
             
             <div class="music-container">
                 <div class="music-search">
-                    <input type="text" id="musicSearch" placeholder="Ej: TWICE, Bad Bunny, Bohemian Rhapsody">
+                    <input type="text" id="musicSearch" placeholder="Buscar canciones, artistas o álbumes...">
                     <button id="searchMusicBtn" class="btn-primary">
                         <i class="fas fa-search"></i> Buscar
                     </button>
@@ -535,7 +505,7 @@
     <script src="js/tabs.js"></script>
     <script src="js/downloader.js"></script>
     <script src="js/ai-chat.js"></script>
-    <script src="js/art-generator.js"></script>
+    <script src="js/pokemon.js"></script>
     <script src="js/qr-generator.js"></script>
     <script src="js/music-finder.js"></script>
     <script src="js/calendar.js"></script>
