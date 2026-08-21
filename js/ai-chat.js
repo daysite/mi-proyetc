@@ -6,6 +6,14 @@ const AI_API_BASE = 'https://api.delirius.online/ia/ripleai';
 // Historial de la conversación (contexto)
 let conversationHistory = [];
 
+// 🔥 INSTRUCCIÓN DE IDIOMA ESPAÑOL (siempre presente)
+const SPANISH_INSTRUCTION = `
+IMPORTANTE: DEBES RESPONDER SIEMPRE EN ESPAÑOL. 
+Tu idioma principal y único es el ESPAÑOL. 
+Incluso si te preguntan en otro idioma, responde en ESPAÑOL.
+Saluda siempre en español y usa un tono amigable y profesional.
+`;
+
 document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
@@ -19,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // LIMPIAR mensajes existentes
     chatMessages.innerHTML = '';
 
-    // ===== MENSAJE DE BIENVENIDA DE RIPLEAI =====
+    // ===== MENSAJE DE BIENVENIDA DE RIPLEAI (EN ESPAÑOL) =====
     const welcomeMessage = `👋 ¡Hola! Soy **RipleAI**, tu asistente inteligente creado por **Daniel**. 
 
 Estoy aquí para ayudarte con lo que necesites:
@@ -33,11 +41,14 @@ Estoy aquí para ayudarte con lo que necesites:
     // Agregar mensaje de bienvenida
     addMessage('bot', welcomeMessage);
     
-    // 🔥 Enviar el contexto inicial a la API para que "conozca" a RipleAI
-    const contextMessage = `Eres RipleAI, un asistente inteligente creado por Daniel. 
-    Tu personalidad es amigable, servicial y profesional. 
-    Respondes siempre en español, a menos que te pregunten en otro idioma.
-    Saludas de manera cálida y ofreces ayuda en todo momento.`;
+    // 🔥 CONTEXTO INICIAL CON PERSONALIDAD Y ESPAÑOL
+    const contextMessage = `
+    Eres RipleAI, un asistente inteligente creado por Daniel. 
+    Tu personalidad es amigable, servicial y profesional.
+    ${SPANISH_INSTRUCTION}
+    Respondes siempre en español, con un tono cálido y positivo.
+    Si alguien te pregunta "hola" o "cómo estás", respondes con un saludo amable en español.
+    `;
 
     // Guardar en el historial (para mantener contexto)
     conversationHistory.push({
@@ -66,10 +77,17 @@ Estoy aquí para ayudarte con lo que necesites:
         // Mostrar indicador de escritura
         const typingId = addTypingIndicator();
 
-        // 🔥 Enviar el historial completo a la API para mantener contexto
-        const contextQuery = conversationHistory.map(msg => 
+        // 🔥 CONSTRUIR LA CONSULTA CON INSTRUCCIÓN DE ESPAÑOL
+        const contextQuery = `
+        ${SPANISH_INSTRUCTION}
+        
+        Historial de la conversación:
+        ${conversationHistory.map(msg => 
             `${msg.role === 'user' ? 'Usuario' : 'RipleAI'}: ${msg.content}`
-        ).join('\n');
+        ).join('\n')}
+        
+        Ahora responde en ESPAÑOL al último mensaje del usuario.
+        `;
 
         const apiUrl = `${AI_API_BASE}?query=${encodeURIComponent(contextQuery)}`;
         console.log(`📡 Llamando a: ${apiUrl}`);
@@ -87,7 +105,10 @@ Estoy aquí para ayudarte con lo que necesites:
                     throw new Error('La API no devolvió una respuesta válida');
                 }
 
-                const botResponse = data.data.result;
+                let botResponse = data.data.result;
+                
+                // 🔥 SI LA RESPUESTA VIENE EN INGLÉS, FORZAR TRADUCCIÓN (opcional)
+                // Pero la API ya debería responder en español por el contexto
                 
                 // Agregar respuesta del bot
                 addMessage('bot', botResponse);
@@ -190,9 +211,9 @@ Estoy aquí para ayudarte con lo que necesites:
         }
     });
 
-    console.log('🤖 RipleAI - Asistente IA iniciado');
+    console.log('🤖 RipleAI - Asistente IA iniciado (ESPAÑOL)');
     console.log('📡 API:', AI_API_BASE);
-    console.log('🧠 Contexto activado');
+    console.log('🧠 Contexto activado con idioma español forzado');
 });
 
 // ===== ESTILOS DEL CHAT =====
