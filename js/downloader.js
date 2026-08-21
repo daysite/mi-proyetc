@@ -1,8 +1,8 @@
-// ===== DESCARGADOR CON API DELIRIUS ONLINE =====
+// ===== DESCARGADOR CON API DELIRIUS.STORE =====
 // Desarrollado por Ander
 
-// 🔥 API CORREGIDA Y FUNCIONAL
-const API_BASE = 'https://api.delirius.online';
+// 🔥 API CORRECTA Y FUNCIONAL
+const API_BASE = 'https://api.delirius.store';
 
 document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.getElementById('downloadBtn');
@@ -146,17 +146,22 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                // 🔥 USAR LA API DE DELIRIUS ONLINE
+                // 🔥 USAR LA API CORRECTA: api.delirius.store
                 const endpoint = selectedFormat === 'mp4' ? 'ytmp4' : 'ytmp3';
                 const apiUrl = `${API_BASE}/download/${endpoint}?url=${encodeURIComponent(url)}`;
                 
                 console.log(`📡 Llamando a: ${apiUrl}`);
                 
                 const res = await fetch(apiUrl);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status} - La API no respondió correctamente`);
+                }
+                
                 const data = await res.json();
 
                 if (!data.status || !data.data) {
-                    throw new Error('No se pudo obtener el contenido');
+                    throw new Error('No se pudo obtener el contenido del video');
                 }
 
                 const result = data.data;
@@ -187,7 +192,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            showError('❌ ' + (error.message || 'Error al procesar la solicitud'));
+            let errorMsg = error.message || 'Error desconocido';
+            if (errorMsg.includes('Failed to fetch')) {
+                errorMsg = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+            }
+            showError('❌ ' + errorMsg);
         }
     }
 
@@ -536,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== INICIALIZAR =====
     renderHistory();
-    console.log('🎯 Descargador con API Delirius Online iniciado');
+    console.log('🎯 Descargador con API Delirius Store iniciado');
     console.log('📡 API_BASE:', API_BASE);
 });
 
