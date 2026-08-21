@@ -1,7 +1,8 @@
-// ===== DESCARGADOR CON SCRAPER REAL-Y2MATE =====
+// ===== DESCARGADOR CON PROXY CORS =====
 // Desarrollado por Ander
 
-// 🔥 SCRAPER FUNCIONAL - Basado en real-y2mate.com
+// 🔥 USAR PROXY CORS PARA EVITAR BLOQUEOS
+const PROXY = 'https://corsproxy.io/?';
 const API_URL = 'https://hub.convert1s.com/api/download';
 const ORIGIN = 'https://real-y2mate.com';
 const REFERER = 'https://real-y2mate.com/';
@@ -20,14 +21,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const historyList = document.getElementById('historyList');
 
     let selectedPlatform = 'youtube';
-    let selectedFormat = 'mp4'; // Por defecto: video
+    let selectedFormat = 'mp4';
 
-    // ===== ELEMENTOS DEL SELECTOR DE FORMATO =====
     const formatVideoBtn = document.getElementById('formatVideo');
     const formatAudioBtn = document.getElementById('formatAudio');
     const formatLabel = document.getElementById('formatLabel');
 
-    // ===== FUNCIONES DEL SCRAPER =====
+    // ===== FUNCIONES DEL SCRAPER CON PROXY =====
     function baseHeaders(extra = {}) {
         return {
             accept: 'application/json',
@@ -63,28 +63,63 @@ document.addEventListener('DOMContentLoaded', function() {
             : `${min}:${String(sec).padStart(2, '0')}`;
     }
 
+    async function fetchWithProxy(url, options = {}) {
+        // Si el proxy no funciona, probar sin él
+        try {
+            const proxyUrl = `${PROXY}${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Origin': ORIGIN,
+                    'Referer': REFERER
+                }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response;
+        } catch (error) {
+            console.warn('⚠️ Proxy falló, intentando sin proxy...', error);
+            // Fallback: intentar sin proxy
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response;
+        }
+    }
+
     async function convert(url, quality = DEFAULT_QUALITY) {
         const videoId = extractVideoId(url);
         if (!videoId) throw new Error('Enlace de YouTube inválido');
         const q = normalizeQuality(quality);
 
-        const res = await fetch(API_URL, {
+        const body = JSON.stringify({
+            url,
+            os: 'windows',
+            output: { 
+                type: selectedFormat === 'mp4' ? 'video' : 'audio', 
+                format: selectedFormat === 'mp4' ? 'mp4' : 'mp3', 
+                quality: q 
+            },
+            audio: { bitrate: '128k' }
+        });
+
+        console.log('📡 Enviando solicitud a:', API_URL);
+        console.log('📦 Body:', body);
+
+        const res = await fetchWithProxy(API_URL, {
             method: 'POST',
             headers: baseHeaders({ 'content-type': 'application/json' }),
-            body: JSON.stringify({
-                url,
-                os: 'windows',
-                output: { type: selectedFormat === 'mp4' ? 'video' : 'audio', format: selectedFormat === 'mp4' ? 'mp4' : 'mp3', quality: q },
-                audio: { bitrate: '128k' }
-            })
+            body: body
         });
-        if (!res.ok) throw new Error(`El servicio respondió HTTP ${res.status}`);
+
         const data = await res.json();
+        console.log('📨 Respuesta:', data);
+
         if (!data.statusUrl) throw new Error(data.error || 'No se pudo iniciar la conversión');
 
         let title = data.title || '';
         for (let i = 0; i < POLL_MAX; i++) {
-            const statusRes = await fetch(data.statusUrl, { headers: baseHeaders() });
+            console.log(`⏳ Polling ${i+1}/${POLL_MAX}...`);
+            const statusRes = await fetchWithProxy(data.statusUrl, { headers: baseHeaders() });
             if (!statusRes.ok) { await sleep(POLL_INTERVAL); continue; }
             const status = await statusRes.json();
             if (status.title) title = status.title;
@@ -223,6 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p style="font-size: 18px; font-weight: 600; margin-top: 12px;">Procesando tu solicitud...</p>
                 <p style="color: var(--text-light); font-size: 14px;">Formato seleccionado: <strong style="color: var(--primary-color);">${formatLabelText}</strong></p>
                 <p style="color: var(--text-light); font-size: 12px; margin-top: 4px;">⏳ Esto puede tomar hasta 30 segundos...</p>
+                <p style="color: var(--text-light); font-size: 11px; margin-top: 4px;">🔒 Usando proxy para evitar bloqueos</p>
                 <div style="margin-top: 16px; width: 100%; max-width: 300px; height: 4px; 
                      background: var(--bg-input); border-radius: 2px; margin: 16px auto 0; overflow: hidden;">
                     <div style="width: 0%; height: 100%; background: var(--primary-gradient); 
@@ -235,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let response;
 
             if (platform === 'youtube') {
-                // 🔥 USAR EL SCRAPER REAL-Y2MATE
                 const quality = selectedFormat === 'mp4' ? DEFAULT_QUALITY : '128k';
                 const result = await convert(url, quality);
                 
@@ -267,8 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error:', error);
             let errorMsg = error.message || 'Error desconocido';
-            if (errorMsg.includes('Failed to fetch')) {
-                errorMsg = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+                errorMsg = 'No se pudo conectar con el servidor. El proxy puede estar bloqueado. Intenta con otro enlace o más tarde.';
             }
             showError('❌ ' + errorMsg);
         }
@@ -328,7 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const buttonText = isAudio ? 'Descargar MP3' : 'Descargar Video';
         const iconClass = isAudio ? 'fa-music' : 'fa-video';
 
-        // Formatear duración si existe
         let durationText = '';
         if (data.duration && data.duration !== '0') {
             const seconds = parseInt(data.duration);
@@ -612,9 +646,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== INICIALIZAR =====
     renderHistory();
-    console.log('🎯 Descargador con scraper real-y2mate iniciado');
+    console.log('🎯 Descargador con proxy CORS iniciado');
     console.log('📡 API_URL:', API_URL);
-    console.log('✅ Calidades soportadas:', VALID_QUALITIES.join(', '));
+    console.log('🔄 Proxy:', PROXY);
 });
 
 // Actualizar estadísticas
